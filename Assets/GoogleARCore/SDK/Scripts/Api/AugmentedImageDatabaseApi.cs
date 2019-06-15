@@ -44,6 +44,12 @@ namespace GoogleARCoreInternal
 
         public IntPtr CreateArPrestoAugmentedImageDatabase(byte[] rawData)
         {
+            if (Application.isEditor)
+            {
+                // ArPrestoAugmentedImageDatabase_create() not supported in editor.
+                return IntPtr.Zero;
+            }
+
             IntPtr outDatabaseHandle = IntPtr.Zero;
             GCHandle handle = new GCHandle();
             IntPtr rawDataHandle = IntPtr.Zero;
@@ -56,7 +62,8 @@ namespace GoogleARCoreInternal
                 length = rawData.Length;
             }
 
-            ExternApi.ArPrestoAugmentedImageDatabase_create(rawDataHandle, length, ref outDatabaseHandle);
+            ExternApi.ArPrestoAugmentedImageDatabase_create(
+                rawDataHandle, length, ref outDatabaseHandle);
 
             if (handle.IsAllocated)
             {
@@ -66,19 +73,27 @@ namespace GoogleARCoreInternal
             return outDatabaseHandle;
         }
 
-        public Int32 AddImageAtRuntime(IntPtr databaseHandle, string name, Texture2D image, float width)
+        public Int32 AddImageAtRuntime(
+            IntPtr databaseHandle, string name, Texture2D image, float width)
         {
             Int32 outIndex = -1;
+
+            if (InstantPreviewManager.IsProvidingPlatform)
+            {
+                InstantPreviewManager.LogLimitedSupportMessage("add images to Augmented Image " +
+                    "database");
+                return outIndex;
+            }
+
             GCHandle grayscaleBytesHandle = _ConvertTextureToGrayscaleBytes(image);
             if (grayscaleBytesHandle.AddrOfPinnedObject() == IntPtr.Zero)
             {
                 return -1;
             }
 
-            ApiArStatus status =
-                ExternApi.ArPrestoAugmentedImageDatabase_addImageAtRuntime(databaseHandle, name,
-                    grayscaleBytesHandle.AddrOfPinnedObject(), image.width, image.height, image.width,
-                    width, ref outIndex);
+            ApiArStatus status = ExternApi.ArPrestoAugmentedImageDatabase_addImageAtRuntime(
+                databaseHandle, name, grayscaleBytesHandle.AddrOfPinnedObject(), image.width,
+                image.height, image.width, width, ref outIndex);
 
             if (grayscaleBytesHandle.IsAllocated)
             {
@@ -87,7 +102,8 @@ namespace GoogleARCoreInternal
 
             if (status != ApiArStatus.Success)
             {
-                Debug.LogWarningFormat("Failed to add aumented image at runtime with status {0}", status);
+                Debug.LogWarningFormat(
+                    "Failed to add aumented image at runtime with status {0}", status);
                 return -1;
             }
 
@@ -106,10 +122,11 @@ namespace GoogleARCoreInternal
                 {
                     for (int j = 0; j < image.width; j++)
                     {
-                        grayscaleBytes[(i * image.width) + j] = 
-                            (byte)(((0.213 * pixels[((image.height - 1 - i) * image.width) + j].r)
-                            + (0.715 * pixels[((image.height - 1 - i) * image.width) + j].g)
-                            + (0.072 * pixels[((image.height - 1 - i) * image.width) + j].b)) * 255);
+                        grayscaleBytes[(i * image.width) + j] =
+                            (byte)((
+                            (0.213 * pixels[((image.height - 1 - i) * image.width) + j].r) +
+                            (0.715 * pixels[((image.height - 1 - i) * image.width) + j].g) +
+                            (0.072 * pixels[((image.height - 1 - i) * image.width) + j].b)) * 255);
                     }
                 }
             }
@@ -129,12 +146,19 @@ namespace GoogleARCoreInternal
                 Int64 rawBytesSize, ref IntPtr outAugmentedImageDatabaseHandle);
 
             [AndroidImport(ApiConstants.ARPrestoApi)]
-            public static extern void ArPrestoAugmentedImageDatabase_destroy(IntPtr augmentedImageDatabaseHandle);
+            public static extern void ArPrestoAugmentedImageDatabase_destroy(
+                IntPtr augmentedImageDatabaseHandle);
 
             [AndroidImport(ApiConstants.ARPrestoApi)]
             public static extern ApiArStatus ArPrestoAugmentedImageDatabase_addImageAtRuntime(
-                IntPtr augmentedImageDatabaseHandle, string imageName, IntPtr imageBytes, Int32 imageWidth,
-                Int32 imageHeight, Int32 imageStride, float imageWidthInMeters, ref Int32 outIndex);
+                IntPtr augmentedImageDatabaseHandle,
+                string imageName,
+                IntPtr imageBytes,
+                Int32 imageWidth,
+                Int32 imageHeight,
+                Int32 imageStride,
+                float imageWidthInMeters,
+                ref Int32 outIndex);
 #pragma warning restore 626
         }
     }

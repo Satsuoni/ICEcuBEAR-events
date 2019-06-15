@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "539222775137",
+    "firebase_url": "https://icecubear-21644.firebaseio.com",
+    "project_id": "icecubear-21644",
+    "storage_bucket": "icecubear-21644.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:539222775137:android:98318cbd1b74e0c8",
+        "android_client_info": {
+          "package_name": "com.google.ar.icecube"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "539222775137-bce9aibkas8bpuad9mon2t6n3iset13q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMFFn0CIKtIHhrOQ-G0Pnm2o26x5tmiMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "539222775137-bce9aibkas8bpuad9mon2t6n3iset13q.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
