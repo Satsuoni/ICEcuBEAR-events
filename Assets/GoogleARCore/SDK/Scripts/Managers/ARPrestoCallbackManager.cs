@@ -57,7 +57,8 @@ namespace GoogleARCoreInternal
 
         public delegate void EarlyUpdateCallback();
 
-        private delegate void OnBeforeSetConfigurationCallback(IntPtr sessionHandle, IntPtr configHandle);
+        private delegate void OnBeforeSetConfigurationCallback(
+            IntPtr sessionHandle, IntPtr configHandle);
 
         private delegate void OnBeforeResumeSessionCallback(IntPtr sessionHandle);
 
@@ -100,6 +101,13 @@ namespace GoogleARCoreInternal
             AsyncTask<ApkAvailabilityStatus> task =
                 new AsyncTask<ApkAvailabilityStatus>(out onComplete);
 
+            if (InstantPreviewManager.IsProvidingPlatform)
+            {
+                InstantPreviewManager.LogLimitedSupportMessage("determine ARCore APK " +
+                    "availability");
+                return task;
+            }
+
             ExternApi.ArPresto_checkApkAvailability(m_CheckApkAvailabilityResultCallback,
                 IntPtr.Zero);
 
@@ -113,6 +121,13 @@ namespace GoogleARCoreInternal
             Action<ApkInstallationStatus> onComplete;
             AsyncTask<ApkInstallationStatus> task =
                 new AsyncTask<ApkInstallationStatus>(out onComplete);
+
+            if (InstantPreviewManager.IsProvidingPlatform)
+            {
+                InstantPreviewManager.LogLimitedSupportMessage("request installation of ARCore " +
+                    "APK");
+                return task;
+            }
 
             ExternApi.ArPresto_requestApkInstallation(userRequested,
                 m_RequestApkInstallationResultCallback, IntPtr.Zero);
@@ -153,7 +168,8 @@ namespace GoogleARCoreInternal
         }
 
         [AOT.MonoPInvokeCallback(typeof(OnBeforeSetConfigurationCallback))]
-        private static void _BeforeSetConfigurationTrampoline(IntPtr sessionHandle, IntPtr configHandle)
+        private static void _BeforeSetConfigurationTrampoline(
+            IntPtr sessionHandle, IntPtr configHandle)
         {
             ExperimentManager.Instance.OnBeforeSetConfiguration(sessionHandle, configHandle);
         }
@@ -170,7 +186,18 @@ namespace GoogleARCoreInternal
         private void _Initialize()
         {
             m_EarlyUpdateCallback = new EarlyUpdateCallback(_EarlyUpdateTrampoline);
-            ExternApi.ArCoreUnity_setArPrestoInitialized(m_EarlyUpdateCallback);
+
+            if (InstantPreviewManager.IsProvidingPlatform)
+            {
+                // Instant preview does not support updated function signature returning 'bool'.
+                ExternApi.ArCoreUnity_setArPrestoInitialized(m_EarlyUpdateCallback);
+            }
+            else if (!ExternApi.ArCoreUnity_setArPrestoInitialized(m_EarlyUpdateCallback))
+            {
+                Debug.LogError(
+                    "Missing Unity Engine ARCore support.  Please ensure that the Unity project " +
+                    "has the 'Player Settings > XR Settings > ARCore Supported' checkbox enabled.");
+            }
 
             IntPtr javaVMHandle = IntPtr.Zero;
             IntPtr activityHandle = IntPtr.Zero;
@@ -188,9 +215,11 @@ namespace GoogleARCoreInternal
             m_OnBeforeSetConfigurationCallback =
                 new OnBeforeSetConfigurationCallback(_BeforeSetConfigurationTrampoline);
 
-            m_OnBeforeResumeSessionCallback = new OnBeforeResumeSessionCallback(_BeforeResumeSessionTrampoline);
+            m_OnBeforeResumeSessionCallback =
+                new OnBeforeResumeSessionCallback(_BeforeResumeSessionTrampoline);
 
-            ExternApi.ArPresto_initialize(javaVMHandle, activityHandle, m_RequestCameraPermissionCallback,
+            ExternApi.ArPresto_initialize(
+                javaVMHandle, activityHandle, m_RequestCameraPermissionCallback,
                 m_OnBeforeSetConfigurationCallback, m_OnBeforeResumeSessionCallback);
         }
 
@@ -218,23 +247,27 @@ namespace GoogleARCoreInternal
             IntPtr context)
         {
             const string cameraPermissionName = "android.permission.CAMERA";
-            AndroidPermissionsManager.RequestPermission(cameraPermissionName).ThenAction((grantResult) =>
-            {
-                onComplete(grantResult.IsAllGranted, context);
-            });
+            AndroidPermissionsManager.RequestPermission(cameraPermissionName)
+                .ThenAction((grantResult) =>
+                {
+                    onComplete(grantResult.IsAllGranted, context);
+                });
         }
 
         private struct ExternApi
         {
 #pragma warning disable 626
             [AndroidImport(ApiConstants.ARCoreShimApi)]
-            public static extern void ArCoreUnity_getJniInfo(ref IntPtr javaVM, ref IntPtr activity);
+            public static extern void ArCoreUnity_getJniInfo(
+                ref IntPtr javaVM, ref IntPtr activity);
 
             [AndroidImport(ApiConstants.ARCoreShimApi)]
-            public static extern void ArCoreUnity_setArPrestoInitialized(EarlyUpdateCallback onEarlyUpdate);
+            public static extern bool ArCoreUnity_setArPrestoInitialized(
+                EarlyUpdateCallback onEarlyUpdate);
 
             [AndroidImport(ApiConstants.ARPrestoApi)]
-            public static extern void ArPresto_initialize(IntPtr javaVM, IntPtr activity,
+            public static extern void ArPresto_initialize(
+                IntPtr javaVM, IntPtr activity,
                 CameraPermissionRequestProvider requestCameraPermission,
                 OnBeforeSetConfigurationCallback onBeforeSetConfiguration,
                 OnBeforeResumeSessionCallback onBeforeResumeSession);
@@ -244,8 +277,8 @@ namespace GoogleARCoreInternal
                 CheckApkAvailabilityResultCallback onResult, IntPtr context);
 
             [AndroidImport(ApiConstants.ARPrestoApi)]
-            public static extern void ArPresto_requestApkInstallation(bool user_requested,
-                RequestApkInstallationResultCallback onResult, IntPtr context);
+            public static extern void ArPresto_requestApkInstallation(
+                bool user_requested, RequestApkInstallationResultCallback onResult, IntPtr context);
 #pragma warning restore 626
         }
     }
