@@ -108,9 +108,8 @@ public class fullEventData
     [Key(2)]
     public int isteps;
     [Key(3)]
-    public Int64 runNum=-1;
-    [Key(4)]
-    public Int64 evNum=-1;
+    public eventDesc description;
+
 
 }
 public class DOMController : MonoBehaviour

@@ -92,12 +92,24 @@ public class FirebaseCentral : MonoBehaviour
 
     public void OnMessageReceived(object sender, Firebase.Messaging.MessageReceivedEventArgs e)
     {
-        UnityEngine.Debug.Log("Received a new message from: " + e.Message.From);
+
+        if(e.Message==null)
+        {
+            Debug.Log("Null message received");
+            return;
+        }
+        Debug.Log("Received a new message from: " + e.Message.From);
         //e.Message.data; ->dict
         //e.Message.Notification.Title;
         //e.Message.Notification.Body;
-        if (txt != null)
-            txt.text = "Message " + e.Message.From + e.Message.Notification.Body;
+        
+        if(e.Message.Notification==null)
+        {
+            Debug.Log("Got message with data only? ");
+        }
+        
+        //if (txt != null)
+         //   txt.text = "Message " + e.Message.From + e.Message.Notification.Body;
 
         eventDesc newEvent = tryLoadingEventDesc(e.Message.Data);
         if (newEvent == null)
@@ -105,7 +117,15 @@ public class FirebaseCentral : MonoBehaviour
             Debug.Log("Malformed data in message");
             return;
         }
-        NotificationUI.spawnNotification(e.Message.Notification.Title, e.Message.Notification.Body, newEvent);
+        if (e.Message.Notification != null)
+        {
+            NotificationUI.spawnNotification(e.Message.Notification.Title, e.Message.Notification.Body, newEvent);
+        }
+        else
+        {
+            //probably means that you got message from clicking on notification outside
+            //do not spawn notification, just process data... 
+        }
     }
 
 

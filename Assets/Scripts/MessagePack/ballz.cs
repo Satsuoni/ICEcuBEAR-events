@@ -43,11 +43,12 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<Type, int>(3)
+            lookup = new global::System.Collections.Generic.Dictionary<Type, int>(4)
             {
                 {typeof(global::System.Collections.Generic.List<global::ballIntegratedData>), 0 },
                 {typeof(global::ballIntegratedData), 1 },
                 {typeof(global::fullEventData), 2 },
+                {typeof(global::eventDesc), 3 },
             };
         }
 
@@ -61,6 +62,7 @@ namespace MessagePack.Resolvers
                 case 0: return new global::MessagePack.Formatters.ListFormatter<global::ballIntegratedData>();
                 case 1: return new MessagePack.Formatters.ballIntegratedDataFormatter();
                 case 2: return new MessagePack.Formatters.fullEventDataFormatter();
+                case 3: return new MessagePack.Formatters.eventDescFormatter();
                 default: return null;
             }
         }
@@ -232,6 +234,91 @@ namespace MessagePack.Formatters
             ____result.eventName = __eventName__;
             ____result.ballData = __ballData__;
             ____result.isteps = __isteps__;
+            return ____result;
+        }
+    }
+
+
+    public sealed class eventDescFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::eventDesc>
+    {
+
+        public int Serialize(ref byte[] bytes, int offset, global::eventDesc value, global::MessagePack.IFormatterResolver formatterResolver)
+        {
+            if (value == null)
+            {
+                return global::MessagePack.MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+            
+            var startOffset = offset;
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 6);
+            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.run);
+            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.evn);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.baseDesc, formatterResolver);
+            offset += MessagePackBinary.WriteDouble(ref bytes, offset, value.energy);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventDate, formatterResolver);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.humName, formatterResolver);
+            return offset - startOffset;
+        }
+
+        public global::eventDesc Deserialize(byte[] bytes, int offset, global::MessagePack.IFormatterResolver formatterResolver, out int readSize)
+        {
+            if (global::MessagePack.MessagePackBinary.IsNil(bytes, offset))
+            {
+                readSize = 1;
+                return null;
+            }
+
+            var startOffset = offset;
+            var length = global::MessagePack.MessagePackBinary.ReadArrayHeader(bytes, offset, out readSize);
+            offset += readSize;
+
+            var __run__ = default(long);
+            var __evn__ = default(long);
+            var __baseDesc__ = default(string);
+            var __energy__ = default(double);
+            var __eventDate__ = default(string);
+            var __humName__ = default(string);
+
+            for (int i = 0; i < length; i++)
+            {
+                var key = i;
+
+                switch (key)
+                {
+                    case 0:
+                        __run__ = MessagePackBinary.ReadInt64(bytes, offset, out readSize);
+                        break;
+                    case 1:
+                        __evn__ = MessagePackBinary.ReadInt64(bytes, offset, out readSize);
+                        break;
+                    case 2:
+                        __baseDesc__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 3:
+                        __energy__ = MessagePackBinary.ReadDouble(bytes, offset, out readSize);
+                        break;
+                    case 4:
+                        __eventDate__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 5:
+                        __humName__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    default:
+                        readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
+                        break;
+                }
+                offset += readSize;
+            }
+
+            readSize = offset - startOffset;
+
+            var ____result = new global::eventDesc();
+            ____result.run = __run__;
+            ____result.evn = __evn__;
+            ____result.baseDesc = __baseDesc__;
+            ____result.energy = __energy__;
+            ____result.eventDate = __eventDate__;
+            ____result.humName = __humName__;
             return ____result;
         }
     }

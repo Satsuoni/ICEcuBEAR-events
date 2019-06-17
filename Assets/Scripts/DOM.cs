@@ -133,7 +133,7 @@ public class DOM : MonoBehaviour { //DOM is simply the name used in unity and do
        // GoogleARCore.Examples.HelloAR.HelloARController hc = GameObject.Find("Example Controller").GetComponent<GoogleARCore.Examples.HelloAR.HelloARController>();
        // hc.AndyPlanePrefab = gameObject;
     }
-	float atime=0;
+	//float atime=0;
 	void Update ()
 	{
 		/*audioSrc.GetSpectrumData(spectrum,0,FFTWindow.Blackman);
