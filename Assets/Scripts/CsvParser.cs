@@ -26,7 +26,7 @@ public class CsvParser : MonoBehaviour {
 	   return ret;
 	}
 	void Start () {
-		string meshPath="Assets/csmesh800/cmesh800_";
+		//string meshPath="Assets/csmesh800/cmesh800_";
 	 string fs = csvFile.text;
          string[] fLines = Regex.Split ( fs, "\n|\r|\r\n" );	
          int cnt=0;

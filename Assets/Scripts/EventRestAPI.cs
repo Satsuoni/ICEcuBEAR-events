@@ -9,21 +9,43 @@ using System.IO;
 using MessagePack.Resolvers;
 using System.Text;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 
-[Serializable]
-public class numEvents
+using evId = System.Collections.Generic.KeyValuePair<long,long>;
+public class Utilz
 {
-    public Int64 nevents;
-}
+    public static string GenerateSHA256(byte[] bytes)
+    {
 
-[Serializable]
+
+
+        byte[] fileBytes = bytes;
+        StringBuilder sb = new StringBuilder();
+
+        using (SHA256Managed sha256 = new SHA256Managed())
+        {
+            byte[] hash = sha256.ComputeHash(fileBytes);
+            foreach (Byte b in hash)
+                sb.Append(b.ToString("x2"));
+        }
+        return sb.ToString();
+      
+    }
+}
+[Serializable,MessagePackObject]
 public class eventDesc
 {
+    [Key(0)]
     public Int64 run;
+    [Key(1)]
     public Int64 evn;
+    [Key(2)]
     public string baseDesc;
+    [Key(3)]
     public double energy;
+    [Key(4)]
     public string eventDate;
+    [Key(5)]
     public string humName = null;
     public bool tryLoadFromArray(JSONNode arr)
     {
@@ -39,12 +61,31 @@ public class eventDesc
                 eventDate = arr[4];
             }
         }
-        catch(System.Exception e)
+        catch(Exception )
         {
 
             return false;
         }
         return true;
+    }
+    public static Regex getProposedCSVMatch()
+    {
+        return new Regex("(\\d+?)_(\\d+?).csv");
+    }
+    public static eventDesc getFromCsvName(Match m)
+    {
+        eventDesc n = new eventDesc();
+        n.run = Int64.Parse(m.Groups[0].Value);
+        n.evn = Int64.Parse(m.Groups[1].Value);
+        n.baseDesc = "Recovered";
+        n.energy = 1;
+        n.eventDate = "unknown";
+
+        return n;
+    }
+    public string csvName()
+    {
+        return string.Format("{0}_{1}.csv",run,evn);
     }
 }
 
@@ -121,37 +162,31 @@ public class ProcessEventCsv : ThreadedJob
     public eventDesc eDesc;
     public string hashName;
     public string csvName;
-
+    public string csvHash;
     public string eMessage = null;
 
 
     List<eventData> curEvent = new List<eventData>();
     Dictionary<int, Dictionary<int, ballIntegratedData>> affBalls = new Dictionary<int, Dictionary<int, ballIntegratedData>>();
     List<ballIntegratedData> collectedBalls = new List<ballIntegratedData>();
-    private string GenerateSHA256( byte[] bytes)
-    {
-
-       
-
-        byte[] fileBytes = bytes;
-        StringBuilder sb = new StringBuilder();
-
-        using (SHA256Managed sha256 = new SHA256Managed())
-        {
-            byte[] hash = sha256.ComputeHash(fileBytes);
-            foreach (Byte b in hash)
-                sb.Append(b.ToString("X2"));
-        }
-        return sb.ToString();
-        //   CreateTextFile(_name + "SHA256.txt", filePath, sb.ToString());
-    }
+   
 
     protected override void ThreadFunction()
     {
-        // Do your threaded task. DON'T use the Unity API here
-       if(saveCsv)
+        if(eDesc==null)
         {
-
+            eDesc = new eventDesc();
+            eDesc.baseDesc = "placeholder";
+            eDesc.run = 100;
+            eDesc.evn = 100;
+            eDesc.energy = 100;
+        }
+        // Do your threaded task. DON'T use the Unity API here
+        if (saveCsv)
+        { 
+            csvName = eDesc.csvName();
+            File.WriteAllText(persistPath + "/" + csvName, InData);
+            csvHash = Utilz.GenerateSHA256(Encoding.UTF8.GetBytes(InData));
         }
         string[] fLines = null;
         if (InData.Contains("\r\n"))
@@ -182,7 +217,7 @@ public class ProcessEventCsv : ThreadedJob
                 if (signalMin == -1 || dat.signal < signalMin) { signalMin = dat.signal; }
                 if (signalMax == -1 || dat.signal > signalMax) { signalMax = dat.signal; }
             }
-            catch (System.Exception e)
+            catch (System.Exception )
             {
                 //Debug.Log(e);
                 //Debug.Log(line);
@@ -246,8 +281,8 @@ public class ProcessEventCsv : ThreadedJob
         }
   
         fullEventData ed = new fullEventData();
-        ed.evNum = eDesc.evn;
-        ed.runNum = eDesc.run;
+        ed.description = eDesc;
+
         if(eDesc.humName!=null)
             ed.eventName = eDesc.humName;
            else
@@ -269,19 +304,23 @@ public class ProcessEventCsv : ThreadedJob
     // final fallback(last priority)
     StandardResolver.Instance);
         }
-        catch (Exception e)
+        catch (Exception )
         {
 
         }
-        var bytes = MessagePackSerializer.Serialize(ed);
-        string filename = string.Format("{0}/{1}.sdt", persistPath, GenerateSHA256(bytes));
-        if(File.Exists(filename))
+        if (saveIntegrated)
         {
-            eMessage = "Event file already exists... Overwriting";
+            var bytes = MessagePackSerializer.Serialize(ed);
+            hashName = string.Format("{0}.sdt", Utilz.GenerateSHA256(bytes));
+            string filename = string.Format("{0}/{1}", persistPath, hashName);
+            if (File.Exists(filename))
+            {
+                eMessage = "Event file already exists... Overwriting";
+            }
+            FileStream file = File.Create(filename);
+            file.Write(bytes, 0, bytes.Length);
+            file.Close();
         }
-        FileStream file = File.Create(filename);
-        file.Write(bytes, 0, bytes.Length);
-        file.Close();
         OutData = ed;
     }
     protected override void OnFinished()
@@ -294,18 +333,56 @@ public class ProcessEventCsv : ThreadedJob
 [Serializable]
 public class SavedEventData
 {
-    eventDesc description;
-    string hashname;
-    string csvName;
-    int integrationSteps;
+    public eventDesc description;
+    public string hashname;
+    public string csvName;
+    public string csvHash; //hash of csv file 
+    public int integrationSteps;
+    public string status;// maybe enum is better but a hassle
+    public bool Corrupt()
+    {
+        if (description == null) return true;
+        if (description.evn < 0) return true;
+        if (description.run < 0) return true;
+        if (integrationSteps < 2) return true;
+        if (csvName!=null && !csvName.EndsWith("csv")) return true;
+        if (hashname!=null && !hashname.EndsWith("sdt")) return true;
+        if (description.energy < 0) return true;
+        if (csvName != null && csvHash == null) return true; //needs to be hashed
+        if (csvHash != null && csvName == null) return true;//shouldn't be
+        return false;
+        
+    }
 }
 [Serializable]
 public class SavedEventsSettings
 {
-    UInt32 numberIntegrated=20; //number of preintegrated files to keep
-    UInt32 numberKeptAsCsv = 60; //number of csv files to keep
-
+    public UInt32 numberIntegrated =20; //number of preintegrated files to keep
+    public UInt32 numberKeptAsCsv = 60; //number of csv files to keep
+    public List<SavedEventData> eventData=new List<SavedEventData>();
+    public bool CheckForCorrectness() //very basic check
+    {
+        if (numberIntegrated < 1 || numberIntegrated > 200) return false;
+        if (numberKeptAsCsv < 1 || numberKeptAsCsv > 500) return false;
+        if (eventData == null) return false;
+        // just remove corrupted savefile nodes
+        List<SavedEventData> todel = new List<SavedEventData>();
+        foreach(SavedEventData dat in eventData)
+        {
+            if(dat.Corrupt())
+            {
+                todel.Add(dat);
+            }
+        }
+        foreach (SavedEventData dat in todel)
+        {
+            eventData.Remove(dat);
+        }
+        return true;
+    }
 }
+
+
 [Serializable]
 public class eventList
 {
@@ -322,7 +399,7 @@ public class EventAccessor
     public Int64 nevents=0;
     public Int64 oldEventNum = 0;
     public List<eventDesc> events=new List<eventDesc>();
-    HashSet<KeyValuePair<Int64, Int64>> processedEvents=new HashSet<KeyValuePair<long, long>>();
+    HashSet<evId> processedEvents=new HashSet<evId>();
     public List<eventDesc> lastEventList;
     bool gotLastEvents = false;
     IEnumerator GetEventNumber()
@@ -521,22 +598,29 @@ public class EventAccessor
         }
     }
     //scans for last events
+    bool _busy = false;
+    public bool busy { get { return _busy; } }
+
     public IEnumerator QueryAndProcess(MonoBehaviour handler) 
     {
+        _busy = true;
         gotEventNumber = false;
         yield return handler.StartCoroutine(GetEventNumber());
         if(!gotEventNumber)
         {
+            _busy = false;
             yield break;
         }
         if(nevents==oldEventNum)
         {
             Debug.Log(string.Format("No new events detected, {0} currently",nevents));
+            _busy = false;
             yield break;
         }
         if (nevents < oldEventNum)
         {
             Debug.Log(string.Format("Events are shrinking?, {0} currently, {1} before", nevents, oldEventNum));
+            _busy = false;
             yield break;
         }
         Int64 delta = nevents - oldEventNum;
@@ -544,12 +628,17 @@ public class EventAccessor
         yield return handler.StartCoroutine(GetLastEvents(delta));
         if(!gotLastEvents)
         {
+            _busy = false;
             yield break;
         }
-        if (lastEventList.Count == 0) yield break;
+        if (lastEventList.Count == 0)
+        {
+            _busy = false;
+            yield break;
+        }
         if (lastEventList.Count!=delta)
         {
-            Debug.Log(string.Format("Got worng number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
+            Debug.Log(string.Format("Got wrong number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
 
         }
         foreach (eventDesc dsc in lastEventList)
@@ -569,44 +658,460 @@ public class EventAccessor
                 continue;
             }
             latestData = procJob.OutData;
-            if (processedEvents.Contains(new KeyValuePair<long, long>(dsc.run, dsc.evn)))
+            if (processedEvents.Contains(new evId(dsc.run, dsc.evn)))
             {
                 Debug.Log(string.Format("Duplicate event? {0}_{1}", dsc.run, dsc.evn));
             }
             else
             {
                 events.Add(dsc);
-                processedEvents.Add(new KeyValuePair<long, long>(dsc.run, dsc.evn));
+                processedEvents.Add(new evId(dsc.run, dsc.evn));
             }
 
         }
         lastEventList.Clear();
         Debug.Log(string.Format("Done updating, cur events {0}",events.Count));
+        _busy = false;
     }
     public fullEventData latestData = null;
 }
+
+public class PrimCache<id,t>
+{
+    UInt32 maxItems = 20;
+    public void setMaxItems(UInt32 mi)
+    {
+        maxItems = mi;
+    }
+    Dictionary<id, t> index = new Dictionary<id, t>();
+    Queue<id> order = new Queue<id>();
+    public bool checkCache(id idn)
+    {
+        return index.ContainsKey(idn);
+    }
+    public bool pushItem(id idt, t itm)
+    {
+        if(index.ContainsKey(idt)&&index[idt]!=null)
+        {
+            return order.Count > maxItems;
+        }
+        index[idt] = itm;
+        order.Enqueue(idt);
+        return order.Count > maxItems;
+    }
+    public void Prune()
+    {
+        while(order.Count>maxItems)
+        {
+            id idt = order.Dequeue();
+            index.Remove(idt);
+        }
+    }
+    public void Clear()
+    {
+        index.Clear();
+        order.Clear();
+    }
+    public t getItem(id idt)
+    {
+        t ret;
+        if(!index.TryGetValue(idt,out ret))
+        {
+            return default(t);
+        }
+         return ret;
+    }
+}
+
 public class EventRestAPI : MonoBehaviour
 {
     EventAccessor nev;
+    public static SavedEventsSettings settings = null;
 
+    Dictionary<evId,SavedEventData> savedIndex = new Dictionary<evId, SavedEventData>();
+    PrimCache<evId, fullEventData> cache = new PrimCache<evId, fullEventData>();
+    public static volatile bool isDropdownReady = false;
+    public static List<eventDesc> notificationsWoken = new List<eventDesc>();
+    const string saveFileName = "savedData.json";
     // Start is called before the first frame update
     void Start()
     {
-        string strng= "{\"events\": [[132431, 65009599, \"gfu - gold\"]]}";
-        var el = JSON.Parse(strng);
+        //  string strng= "{\"events\": [[132431, 65009599, \"gfu - gold\"]]}";
+        // var el = JSON.Parse(strng);
+        savedIndex = new Dictionary<evId, SavedEventData>();
 
-        Debug.Log(el["events"][0]);
-        foreach (var eda in el["events"])
-        {
-            Debug.Log((Int64)eda.Value[0]);
-        }
         nev = new EventAccessor();
         StartCoroutine(nev.QueryAndProcess(this));
+        isDropdownReady = false;
     }
- 
+    void saveSettings()
+    {
+        if (settings == null) return;
+        string savetxt = JsonUtility.ToJson(settings);
+        string fullSaveName = Application.persistentDataPath + "/" + saveFileName;
+        try
+        {
+            File.WriteAllText(fullSaveName, savetxt);
+        }
+        catch (Exception e)
+        {
+            Debug.LogFormat("Couldn't save settings: {0}",e);
+
+        }
+        
+
+    }
+    IEnumerator repairSave() //more like remake really
+    {
+        settings = new SavedEventsSettings();
+        settings.eventData = new List<SavedEventData>();
+        string sourceDir = Application.persistentDataPath;
+        Regex csvform = eventDesc.getProposedCSVMatch();
+        foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.csv"))
+        {
+            string fileName = currentFile.Substring(sourceDir.Length + 1);
+            Match m = csvform.Match(fileName);
+            if (!m.Success)
+            {
+                Debug.Log(string.Format("Removing extraneous csv file {0}", fileName));
+                File.Delete(currentFile);
+                continue;
+            }
+            try
+            {
+                SavedEventData s = new SavedEventData();
+                s.description = eventDesc.getFromCsvName(m);
+                s.status = "Csv recovered";
+
+                s.csvName = fileName;
+                byte[] csv = File.ReadAllBytes(currentFile);
+                s.csvHash = Utilz.GenerateSHA256(csv);
+                s.hashname = null;
+                settings.eventData.Add(s);
+                savedIndex[new KeyValuePair<long, long>(s.description.run, s.description.evn)] = s;
+            }
+            catch (Exception)
+            {
+                continue;
+            }
+            yield return null; //pause
+        }
+
+
+        foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.sdt"))
+        {
+            string fileName = currentFile.Substring(sourceDir.Length + 1);
+            if (fileName.Length != 36)
+            {
+                Debug.LogFormat("Filename {0} is of invalid length {1}, PURGE", fileName, fileName.Length);
+                File.Delete(currentFile);
+                continue;
+            }
+            byte[] dat = null;
+            try
+            {
+                dat = File.ReadAllBytes(currentFile);
+                fullEventData fl = MessagePackSerializer.Deserialize<fullEventData>(dat);
+                if(fl.description==null)
+                {
+                    continue;
+                }
+
+                KeyValuePair<long, long> ptr = new KeyValuePair<long, long>(fl.description.run, fl.description.evn);
+                SavedEventData sdat = null;
+                if(savedIndex.ContainsKey(ptr))
+                {
+                    sdat = savedIndex[ptr];
+                }
+                else
+                {
+                    sdat = new SavedEventData();
+                    sdat.csvHash = null;
+                    sdat.csvName = null;
+                    settings.eventData.Add(sdat);
+                    savedIndex[ptr] = sdat;
+                }
+                sdat.status = "SDT recovered";
+                sdat.description = fl.description;
+                sdat.hashname = fileName;
+
+            }
+            catch(Exception e)
+            {
+                Debug.LogFormat("Error reading/parsing {0} :{1}",currentFile,e);
+            }
+            yield return null; //we are not in a hurry, I hope.  
+        }
+        saveSettings();
+    }
+    bool tryLoadingSave(string fullSaveName)
+    {
+        
+        if (!File.Exists(fullSaveName)) return false;
+        string filedata = null;
+        try
+        {
+            filedata= File.ReadAllText(fullSaveName, Encoding.UTF8);
+        }
+        catch (Exception e)
+        {
+            Debug.Log(string.Format("Error reading {0}: {1}",fullSaveName,e));
+            return false;
+        }
+        if (filedata == null) return false;
+        if (filedata.Length <= 2) return false;
+        try
+        {
+            settings=JsonUtility.FromJson<SavedEventsSettings>(filedata);
+        }
+        catch (Exception e)
+        {
+            Debug.Log(string.Format("Error parsing settings:  {0}", e));
+            return false;
+        }
+        if (settings == null) return false;
+        if (!settings.CheckForCorrectness()) return false;
+
+
+        return true;
+    }
+    public static string mainURL = "https://ar.obolus.com";
+    public static string eventCounter = "nevents";
+    public static string lastEvents = "lastevents";
+    public static string lastEventsBefore = "lasteventsbeforeid";
+    public static string efile = "eventfile";
+    IEnumerator loadAndSaveSingleEvent(eventDesc ev)
+    {
+        if (ev == null) yield break;
+        string dir = Application.persistentDataPath + "/";
+        evId evid = new evId(ev.run,ev.evn);
+        SavedEventData sdat = null;
+        if (savedIndex.ContainsKey(evid))
+        {
+            sdat = savedIndex[evid];
+            if(sdat.hashname!=null)
+            {
+                string fhash = dir + sdat.hashname;
+                if(File.Exists(fhash))
+                {
+                    try
+                    {
+                        byte[] dat = File.ReadAllBytes(fhash);
+                        fullEventData fl = MessagePackSerializer.Deserialize<fullEventData>(dat);
+                        if(fl.description.evn==ev.evn&& fl.description.run == ev.run)
+                        {
+                            //load complete
+                            cache.pushItem(evid, fl);
+                            yield break;
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogFormat("Corrupt file? {0} {1}", sdat.hashname, e);
+                    }
+                    //couldn't load
+                    File.Delete(fhash);
+
+                }
+                sdat.hashname = null;
+            }
+            if(sdat.csvName!=null)
+            {
+                string fcsv = dir + sdat.csvName;
+                if (File.Exists(fcsv))
+                {
+                    string csvText = null;
+                    try
+                    {
+                        byte[] csvBytes = File.ReadAllBytes(fcsv);
+                        string hash = Utilz.GenerateSHA256(csvBytes);
+                        if(sdat.csvHash==null || hash!=sdat.csvHash)
+                        { Debug.Log("Invalid csv hash"); csvText = null; }
+                        else
+                        csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogFormat("Corrupt csv? {0} {1}", sdat.csvName, e);
+                    }
+                    if (csvText != null)
+                    {
+                        ProcessEventCsv job = new ProcessEventCsv();
+                        job.eDesc = ev;
+                        job.eMessage = null;
+                        job.InData = csvText;
+                        job.saveIntegrated = true;
+                        job.persistPath = Application.persistentDataPath;
+                        job.Start();
+                        yield return StartCoroutine(job.WaitFor());
+                        if (job.eMessage != null)
+                        {
+                            Debug.Log(job.eMessage);
+                        }
+                        if (job.OutData == null)
+                        {
+                            Debug.Log("Failed processing");
+                        }
+                        else
+                        {
+                            cache.pushItem(evid, job.OutData);
+                            sdat.hashname = job.hashName;
+                            yield break;
+                        }
+                    }
+                }
+                 sdat.csvName = null;
+            }
+        }
+        else
+        {
+            sdat = new SavedEventData();
+            sdat.description = ev;
+            sdat.csvName = null;
+            sdat.csvHash = null;
+            sdat.hashname = null;
+
+        }
+        string url = String.Format("{0}/{1}/{2}/{3}", mainURL, efile, ev.run, ev.evn);
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            // Request and wait for the desired page.
+            webRequest.chunkedTransfer = false;
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError)
+            {
+
+                Debug.Log("Error getting  " + url + " :" + webRequest.error);
+                yield break;
+            }
+            else
+            {
+                ProcessEventCsv job = new ProcessEventCsv();
+                job.eDesc = ev;
+                job.saveCsv = true;
+                job.saveIntegrated = true;
+                job.eMessage = null;
+                job.InData = webRequest.downloadHandler.text;
+                job.persistPath = Application.persistentDataPath;
+
+                job.Start();
+                yield return StartCoroutine(job.WaitFor());
+                if (job.eMessage != null) { Debug.Log(job.eMessage); }
+                if (job.OutData==null)
+                {
+                    sdat.status = "Failed download";
+                    if(!savedIndex.ContainsKey(evid))
+                    {
+                        savedIndex[evid] = sdat;
+                        settings.eventData.Add(sdat);
+                        saveSettings();
+                    }
+                    yield break;
+                }
+                cache.pushItem(evid, job.OutData);
+                sdat.hashname = job.hashName;
+                sdat.csvHash = job.csvHash;
+                sdat.csvName = job.csvName;
+                if (!savedIndex.ContainsKey(evid))
+                {
+                    savedIndex[evid] = sdat;
+                    settings.eventData.Add(sdat);
+                    saveSettings();
+                }
+            }
+        }
+    }
+    IEnumerator loadNotifiedEvents()
+    {
+         while( notificationsWoken.Count>0) //amount can change while loading...
+        {
+            eventDesc toget = notificationsWoken[0];
+            notificationsWoken.RemoveAt(0);
+            yield return StartCoroutine(loadAndSaveSingleEvent(toget));
+        }
+    }
+    IEnumerator Lifecycle()
+    {
+        string fullSaveName = Application.persistentDataPath + "/" + saveFileName;
+        string sourceDir = Application.persistentDataPath;
+        if (!tryLoadingSave(fullSaveName))
+        {
+            yield return StartCoroutine(repairSave());
+            if (!tryLoadingSave(fullSaveName))
+            {
+                Debug.Log("Could not repair settings!");
+                yield break;
+            }
+        }
+        if (settings == null)
+        {
+            Debug.Log("Could not recover settings!");
+            yield break; //may crash after, but at that point, something is seriously off?
+        }
+        foreach (SavedEventData evd in settings.eventData) //reindex
+        {
+            savedIndex[new evId(evd.description.run, evd.description.evn)] = evd;
+        }
+        //3. Scan folder for files not mentioned in saved data. Remove them.
+        HashSet<string> mentioned = new HashSet<string>();
+        foreach (SavedEventData evd in settings.eventData)
+        {
+            if (evd.csvName != null) mentioned.Add(evd.csvName);
+            if (evd.hashname != null) mentioned.Add(evd.hashname);
+        }
+        foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.csv"))
+        {
+            string fileName = currentFile.Substring(sourceDir.Length + 1);
+            if(!mentioned.Contains(fileName))
+            {
+                Debug.LogFormat("Pruning {0}", fileName);
+                File.Delete(currentFile);
+            }
+        }
+        foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.sdt"))
+        {
+            string fileName = currentFile.Substring(sourceDir.Length + 1);
+            if (!mentioned.Contains(fileName))
+            {
+                Debug.LogFormat("Pruning {0}", fileName);
+                File.Delete(currentFile);
+            }
+        }
+        isDropdownReady = true;
+        //4. If woken up by notification tap - try getting event data if we don't have it in the list as coroutine...
+
+    }
     // Update is called once per frame
     void Update()
     {
         
     }
 }
+/* 
+ * Savedata lifecycle:
+ * 1. Load savedData.json
+ * 2. If it is missing or corrupt:
+ *    scan folder for sdt and csv files
+ *    register those into savedData
+ *    save json
+ * (saved data/event list is accessible for dropdown at this point)   
+ * 3. Scan folder for files not mentioned in saved data. Remove them.
+ * 4. If woken up by notification tap - try getting event data if we don't have it in the list as coroutine...
+ * 5. Run network update for eventnum we don't seem to have. Save up to set number of files from new ones.
+ * 6. Run a full network update (with paging) as coroutine to fill up gaps if any
+ * 7. Download files and process files to fill up settings quota. 
+ * 8. Prune excess files (save json after every step) 
+ * 9. On new notification: run network update (parallel should be ok, even with some overlap)
+ * 10. On selecting in dropdown: if event integrated data in cache: set that. 
+ *     if in file: load file, set, push into cache
+ *     if in csv form: load file, process file (no saving if above quota), set, push into cache
+ *     if not present on device: try getting from network, then see above.
+ * 11. Statuses (per event): 
+ *     downloading
+ *     processing
+ *     loading data
+ *     loading saved
+ *     failed download
+ *     ...etc
+ * 
+ */
