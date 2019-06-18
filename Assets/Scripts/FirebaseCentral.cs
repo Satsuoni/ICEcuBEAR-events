@@ -125,6 +125,7 @@ public class FirebaseCentral : MonoBehaviour
         {
             //probably means that you got message from clicking on notification outside
             //do not spawn notification, just process data... 
+            EventRestAPI.notificationsWoken.Add(newEvent); //no guarantee this will fire first... 
         }
     }
 
