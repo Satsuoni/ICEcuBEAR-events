@@ -93,7 +93,8 @@ public class ThreadedJob
 {
      private bool m_IsDone = false;
 private object m_Handle = new object();
-private System.Threading.Thread m_Thread = null;
+    protected static object m_Lock = new object();
+    private System.Threading.Thread m_Thread = null;
 public bool IsDone
 {
     get
@@ -183,10 +184,13 @@ public class ProcessEventCsv : ThreadedJob
         }
         // Do your threaded task. DON'T use the Unity API here
         if (saveCsv)
-        { 
-            csvName = eDesc.csvName();
-            File.WriteAllText(persistPath + "/" + csvName, InData);
-            csvHash = Utilz.GenerateSHA256(Encoding.UTF8.GetBytes(InData));
+        {
+            lock (m_Lock)
+            {
+                csvName = eDesc.csvName();
+                File.WriteAllText(persistPath + "/" + csvName, InData);
+                csvHash = Utilz.GenerateSHA256(Encoding.UTF8.GetBytes(InData));
+            }
         }
         string[] fLines = null;
         if (InData.Contains("\r\n"))
@@ -312,14 +316,17 @@ public class ProcessEventCsv : ThreadedJob
         {
             var bytes = MessagePackSerializer.Serialize(ed);
             hashName = string.Format("{0}.sdt", Utilz.GenerateSHA256(bytes));
-            string filename = string.Format("{0}/{1}", persistPath, hashName);
-            if (File.Exists(filename))
+            lock (m_Lock)
             {
-                eMessage = "Event file already exists... Overwriting";
+                string filename = string.Format("{0}/{1}", persistPath, hashName);
+                if (File.Exists(filename))
+                {
+                    eMessage = "Event file already exists... Overwriting";
+                }
+                FileStream file = File.Create(filename);
+                file.Write(bytes, 0, bytes.Length);
+                file.Close();
             }
-            FileStream file = File.Create(filename);
-            file.Write(bytes, 0, bytes.Length);
-            file.Close();
         }
         OutData = ed;
     }
@@ -402,110 +409,8 @@ public class EventAccessor
     HashSet<evId> processedEvents=new HashSet<evId>();
     public List<eventDesc> lastEventList;
     bool gotLastEvents = false;
-    IEnumerator GetEventNumber()
-    {
-        string url = String.Format("{0}/{1}", mainURL, eventCounter);
-        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
-        {
-            // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
-            yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
-            {
-                gotEventNumber = false;
-                Debug.Log("Error getting  "+url+" :" + webRequest.error+" --> "+webRequest.responseCode.ToString()+webRequest.downloadHandler.text);
-                yield break;
-            }
-            else
-            {
-                JSONNode el=null;
-                try
-                {
-                     el = JSON.Parse(webRequest.downloadHandler.text);
-                }
-                catch(System.Exception e)
-                {
-                    Debug.Log(e);
-                    gotEventNumber = false;
-                    yield break;
-                }
-                if (el["nevents"] == null)
-                {
-                    gotEventNumber = false;
-                    yield break;
-                }
-                try
-                {
-                 
-                    nevents = (Int64)el["nevents"];
-                    gotEventNumber = true;
-                }
-                catch(Exception  e)
-                {
-                    Debug.Log(e);
-                    gotEventNumber = false;
-                }
-
-            }
-        }
-    }
-    IEnumerator GetLastEvents(Int64 delta)
-    {
-        lastEventList = new List<eventDesc>();
-        string url = String.Format("{0}/{1}/{2}", mainURL, lastEvents,delta);
-        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
-        {
-            // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
-            yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
-            {
-                gotLastEvents = false;
-                Debug.Log("Error getting  " + url + " :" + webRequest.error);
-                yield break;
-            }
-            else
-            {
-                JSONNode el = null;
-                try
-                {
-                    el = JSON.Parse(webRequest.downloadHandler.text);
-                }
-                catch (System.Exception e)
-                {
-                    Debug.Log(e);
-                    gotLastEvents = false;
-                    yield break;
-                }
-                if (el["events"] == null)
-                {
-                    gotLastEvents = false;
-                    yield break;
-                }
-                 try
-                {
-                    foreach(var eda in el["events"])
-                    {
-                        eventDesc ed = new eventDesc();
-                        if(ed.tryLoadFromArray(eda.Value))
-                        {
-                            lastEventList.Add(ed);
-                        }
-                       
-                    }
-                    
-                    gotLastEvents = true;
-                }
-                catch (Exception e)
-                {
-                    Debug.Log(e);
-                    gotLastEvents = false;
-
-                }
-
-            }
-        }
-    }
+   
+    
 
     bool gotLastBefore = false;
     IEnumerator GetLastEventsBefore(Int64 delta,Int64 runId, Int64 evd)
@@ -880,11 +785,36 @@ public class EventRestAPI : MonoBehaviour
     public static string lastEvents = "lastevents";
     public static string lastEventsBefore = "lasteventsbeforeid";
     public static string efile = "eventfile";
+
+    //primitive lock
+    HashSet<evId> __locks = new HashSet<evId>();
+    bool _lock(evId id)
+    {
+        if(__locks==null) __locks = new HashSet<evId>();
+        if (__locks.Contains(id)) return false;
+        __locks.Add(id);
+        return true;
+    }
+    void _unlock(evId id)
+    {
+        if (__locks == null) __locks = new HashSet<evId>();
+        if (__locks.Contains(id)) __locks.Remove(id);
+    }
+    //preferably, only process event here to avoid races, etc;
     IEnumerator loadAndSaveSingleEvent(eventDesc ev)
     {
         if (ev == null) yield break;
         string dir = Application.persistentDataPath + "/";
         evId evid = new evId(ev.run,ev.evn);
+        if(cache.checkCache(evid))
+        {
+            //already have it, break;
+            yield break;
+        }
+        while(!_lock(evid))
+        {
+            yield return null;
+        }
         SavedEventData sdat = null;
         if (savedIndex.ContainsKey(evid))
         {
@@ -902,6 +832,7 @@ public class EventRestAPI : MonoBehaviour
                         {
                             //load complete
                             cache.pushItem(evid, fl);
+                            _unlock(evid);//rAII is pain
                             yield break;
                         }
                     }
@@ -956,6 +887,7 @@ public class EventRestAPI : MonoBehaviour
                         {
                             cache.pushItem(evid, job.OutData);
                             sdat.hashname = job.hashName;
+                            _unlock(evid);
                             yield break;
                         }
                     }
@@ -982,6 +914,14 @@ public class EventRestAPI : MonoBehaviour
             {
 
                 Debug.Log("Error getting  " + url + " :" + webRequest.error);
+                sdat.status = "Failed download";
+                if (!savedIndex.ContainsKey(evid))
+                {
+                    savedIndex[evid] = sdat;
+                    settings.eventData.Add(sdat);
+                    saveSettings();
+                }
+                _unlock(evid);
                 yield break;
             }
             else
@@ -999,13 +939,14 @@ public class EventRestAPI : MonoBehaviour
                 if (job.eMessage != null) { Debug.Log(job.eMessage); }
                 if (job.OutData==null)
                 {
-                    sdat.status = "Failed download";
+                    sdat.status = "Failed processing";
                     if(!savedIndex.ContainsKey(evid))
                     {
                         savedIndex[evid] = sdat;
                         settings.eventData.Add(sdat);
                         saveSettings();
                     }
+                    _unlock(evid);
                     yield break;
                 }
                 cache.pushItem(evid, job.OutData);
@@ -1020,6 +961,7 @@ public class EventRestAPI : MonoBehaviour
                 }
             }
         }
+        _unlock(evid);
     }
     IEnumerator loadNotifiedEvents()
     {
@@ -1029,6 +971,161 @@ public class EventRestAPI : MonoBehaviour
             notificationsWoken.RemoveAt(0);
             yield return StartCoroutine(loadAndSaveSingleEvent(toget));
         }
+    }
+
+    IEnumerator GetEventNumber()
+    {
+        string url = String.Format("{0}/{1}", mainURL, eventCounter);
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            // Request and wait for the desired page.
+            webRequest.chunkedTransfer = false;
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError)
+            {
+                gotEventNumber = false;
+                Debug.Log("Error getting  " + url + " :" + webRequest.error + " --> " + webRequest.responseCode.ToString() + webRequest.downloadHandler.text);
+                yield break;
+            }
+            else
+            {
+                JSONNode el = null;
+                try
+                {
+                    el = JSON.Parse(webRequest.downloadHandler.text);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log(e);
+                    gotEventNumber = false;
+                    yield break;
+                }
+                if (el["nevents"] == null)
+                {
+                    gotEventNumber = false;
+                    yield break;
+                }
+                try
+                {
+
+                    nevents = (Int64)el["nevents"];
+                    gotEventNumber = true;
+                }
+                catch (Exception e)
+                {
+                    Debug.Log(e);
+                    gotEventNumber = false;
+                }
+
+            }
+        }
+    }
+    List<eventDesc>  lastEventList = new List<eventDesc>();
+    IEnumerator GetLastEvents(Int64 delta)
+    {
+        lastEventList = new List<eventDesc>();
+        string url = String.Format("{0}/{1}/{2}", mainURL, lastEvents, delta);
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            // Request and wait for the desired page.
+            webRequest.chunkedTransfer = false;
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError)
+            {
+                gotLastEvents = false;
+                Debug.Log("Error getting  " + url + " :" + webRequest.error);
+                yield break;
+            }
+            else
+            {
+                JSONNode el = null;
+                try
+                {
+                    el = JSON.Parse(webRequest.downloadHandler.text);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log(e);
+                    gotLastEvents = false;
+                    yield break;
+                }
+                if (el["events"] == null)
+                {
+                    gotLastEvents = false;
+                    yield break;
+                }
+                try
+                {
+                    foreach (var eda in el["events"])
+                    {
+                        eventDesc ed = new eventDesc();
+                        if (ed.tryLoadFromArray(eda.Value))
+                        {
+                            lastEventList.Add(ed);
+                        }
+
+                    }
+
+                    gotLastEvents = true;
+                }
+                catch (Exception e)
+                {
+                    Debug.Log(e);
+                    gotLastEvents = false;
+
+                }
+
+            }
+        }
+    }
+    bool gotEventNumber = false;
+    Int64 nevents;
+    bool gotLastEvents = false;
+    public IEnumerator OptimisticUpdate()
+    {
+     
+        gotEventNumber = false;
+        yield return handler.StartCoroutine(GetEventNumber());
+        if (!gotEventNumber)
+        {
+            yield break;
+        }
+        int oldEventNum = settings.eventData.Count;
+        if (nevents == settings.eventData.Count)
+        {
+            Debug.Log(string.Format("No new events detected, {0} currently", nevents));
+            yield break;
+        }
+        if (nevents < oldEventNum)
+        {
+            Debug.Log(string.Format("Events are shrinking?, {0} currently, {1} before", nevents, oldEventNum));
+            yield break;
+        }
+        Int64 delta = nevents - oldEventNum;
+        gotLastEvents = false;
+        yield return handler.StartCoroutine(GetLastEvents(delta));
+        if (!gotLastEvents)
+        {
+            yield break;
+        }
+        if (lastEventList.Count == 0)
+        {
+            yield break;
+        }
+        if (lastEventList.Count != delta)
+        {
+            Debug.Log(string.Format("Got wrong number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
+
+        }
+        foreach (eventDesc dsc in lastEventList)
+        {
+            yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
+            _unlock(new evId(dsc.run,dsc.evn)); //just in case
+        }
+        lastEventList.Clear();
+        saveSettings();
+        Debug.Log(string.Format("Done updating, cur events {0}", settings.eventData.Count));
+      
     }
     IEnumerator Lifecycle()
     {
@@ -1079,7 +1176,9 @@ public class EventRestAPI : MonoBehaviour
         }
         isDropdownReady = true;
         //4. If woken up by notification tap - try getting event data if we don't have it in the list as coroutine...
-
+        StartCoroutine(loadNotifiedEvents());
+        //5. Run network update for eventnum we don't seem to have. Save up to set number of files from new ones.
+        yield return StartCoroutine(OptimisticUpdate()); 
     }
     // Update is called once per frame
     void Update()
