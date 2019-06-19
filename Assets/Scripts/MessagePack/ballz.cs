@@ -43,12 +43,15 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<Type, int>(4)
+            lookup = new global::System.Collections.Generic.Dictionary<Type, int>(7)
             {
                 {typeof(global::System.Collections.Generic.List<global::ballIntegratedData>), 0 },
-                {typeof(global::ballIntegratedData), 1 },
-                {typeof(global::fullEventData), 2 },
+                {typeof(global::System.Collections.Generic.List<global::SavedEventData>), 1 },
+                {typeof(global::ballIntegratedData), 2 },
                 {typeof(global::eventDesc), 3 },
+                {typeof(global::fullEventData), 4 },
+                {typeof(global::SavedEventData), 5 },
+                {typeof(global::SavedEventsSettings), 6 },
             };
         }
 
@@ -60,9 +63,12 @@ namespace MessagePack.Resolvers
             switch (key)
             {
                 case 0: return new global::MessagePack.Formatters.ListFormatter<global::ballIntegratedData>();
-                case 1: return new MessagePack.Formatters.ballIntegratedDataFormatter();
-                case 2: return new MessagePack.Formatters.fullEventDataFormatter();
+                case 1: return new global::MessagePack.Formatters.ListFormatter<global::SavedEventData>();
+                case 2: return new MessagePack.Formatters.ballIntegratedDataFormatter();
                 case 3: return new MessagePack.Formatters.eventDescFormatter();
+                case 4: return new MessagePack.Formatters.fullEventDataFormatter();
+                case 5: return new MessagePack.Formatters.SavedEventDataFormatter();
+                case 6: return new MessagePack.Formatters.SavedEventsSettingsFormatter();
                 default: return null;
             }
         }
@@ -172,73 +178,6 @@ namespace MessagePack.Formatters
     }
 
 
-    public sealed class fullEventDataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::fullEventData>
-    {
-
-        public int Serialize(ref byte[] bytes, int offset, global::fullEventData value, global::MessagePack.IFormatterResolver formatterResolver)
-        {
-            if (value == null)
-            {
-                return global::MessagePack.MessagePackBinary.WriteNil(ref bytes, offset);
-            }
-            
-            var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 3);
-            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventName, formatterResolver);
-            offset += formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::ballIntegratedData>>().Serialize(ref bytes, offset, value.ballData, formatterResolver);
-            offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.isteps);
-            return offset - startOffset;
-        }
-
-        public global::fullEventData Deserialize(byte[] bytes, int offset, global::MessagePack.IFormatterResolver formatterResolver, out int readSize)
-        {
-            if (global::MessagePack.MessagePackBinary.IsNil(bytes, offset))
-            {
-                readSize = 1;
-                return null;
-            }
-
-            var startOffset = offset;
-            var length = global::MessagePack.MessagePackBinary.ReadArrayHeader(bytes, offset, out readSize);
-            offset += readSize;
-
-            var __eventName__ = default(string);
-            var __ballData__ = default(global::System.Collections.Generic.List<global::ballIntegratedData>);
-            var __isteps__ = default(int);
-
-            for (int i = 0; i < length; i++)
-            {
-                var key = i;
-
-                switch (key)
-                {
-                    case 0:
-                        __eventName__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
-                        break;
-                    case 1:
-                        __ballData__ = formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::ballIntegratedData>>().Deserialize(bytes, offset, formatterResolver, out readSize);
-                        break;
-                    case 2:
-                        __isteps__ = MessagePackBinary.ReadInt32(bytes, offset, out readSize);
-                        break;
-                    default:
-                        readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
-                        break;
-                }
-                offset += readSize;
-            }
-
-            readSize = offset - startOffset;
-
-            var ____result = new global::fullEventData();
-            ____result.eventName = __eventName__;
-            ____result.ballData = __ballData__;
-            ____result.isteps = __isteps__;
-            return ____result;
-        }
-    }
-
-
     public sealed class eventDescFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::eventDesc>
     {
 
@@ -319,6 +258,308 @@ namespace MessagePack.Formatters
             ____result.energy = __energy__;
             ____result.eventDate = __eventDate__;
             ____result.humName = __humName__;
+            return ____result;
+        }
+    }
+
+
+    public sealed class fullEventDataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::fullEventData>
+    {
+
+        public int Serialize(ref byte[] bytes, int offset, global::fullEventData value, global::MessagePack.IFormatterResolver formatterResolver)
+        {
+            if (value == null)
+            {
+                return global::MessagePack.MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+            
+            var startOffset = offset;
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 4);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventName, formatterResolver);
+            offset += formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::ballIntegratedData>>().Serialize(ref bytes, offset, value.ballData, formatterResolver);
+            offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.isteps);
+            offset += formatterResolver.GetFormatterWithVerify<global::eventDesc>().Serialize(ref bytes, offset, value.description, formatterResolver);
+            return offset - startOffset;
+        }
+
+        public global::fullEventData Deserialize(byte[] bytes, int offset, global::MessagePack.IFormatterResolver formatterResolver, out int readSize)
+        {
+            if (global::MessagePack.MessagePackBinary.IsNil(bytes, offset))
+            {
+                readSize = 1;
+                return null;
+            }
+
+            var startOffset = offset;
+            var length = global::MessagePack.MessagePackBinary.ReadArrayHeader(bytes, offset, out readSize);
+            offset += readSize;
+
+            var __eventName__ = default(string);
+            var __ballData__ = default(global::System.Collections.Generic.List<global::ballIntegratedData>);
+            var __isteps__ = default(int);
+            var __description__ = default(global::eventDesc);
+
+            for (int i = 0; i < length; i++)
+            {
+                var key = i;
+
+                switch (key)
+                {
+                    case 0:
+                        __eventName__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 1:
+                        __ballData__ = formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::ballIntegratedData>>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 2:
+                        __isteps__ = MessagePackBinary.ReadInt32(bytes, offset, out readSize);
+                        break;
+                    case 3:
+                        __description__ = formatterResolver.GetFormatterWithVerify<global::eventDesc>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    default:
+                        readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
+                        break;
+                }
+                offset += readSize;
+            }
+
+            readSize = offset - startOffset;
+
+            var ____result = new global::fullEventData();
+            ____result.eventName = __eventName__;
+            ____result.ballData = __ballData__;
+            ____result.isteps = __isteps__;
+            ____result.description = __description__;
+            return ____result;
+        }
+    }
+
+
+    public sealed class SavedEventDataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::SavedEventData>
+    {
+
+        readonly global::MessagePack.Internal.AutomataDictionary ____keyMapping;
+        readonly byte[][] ____stringByteKeys;
+
+        public SavedEventDataFormatter()
+        {
+            this.____keyMapping = new global::MessagePack.Internal.AutomataDictionary()
+            {
+                { "description", 0},
+                { "hashname", 1},
+                { "csvName", 2},
+                { "csvHash", 3},
+                { "integrationSteps", 4},
+                { "status", 5},
+            };
+
+            this.____stringByteKeys = new byte[][]
+            {
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("description"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("hashname"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("csvName"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("csvHash"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("integrationSteps"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("status"),
+                
+            };
+        }
+
+
+        public int Serialize(ref byte[] bytes, int offset, global::SavedEventData value, global::MessagePack.IFormatterResolver formatterResolver)
+        {
+            if (value == null)
+            {
+                return global::MessagePack.MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+            
+            var startOffset = offset;
+            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 6);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[0]);
+            offset += formatterResolver.GetFormatterWithVerify<global::eventDesc>().Serialize(ref bytes, offset, value.description, formatterResolver);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[1]);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.hashname, formatterResolver);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[2]);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.csvName, formatterResolver);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[3]);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.csvHash, formatterResolver);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[4]);
+            offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.integrationSteps);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[5]);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.status, formatterResolver);
+            return offset - startOffset;
+        }
+
+        public global::SavedEventData Deserialize(byte[] bytes, int offset, global::MessagePack.IFormatterResolver formatterResolver, out int readSize)
+        {
+            if (global::MessagePack.MessagePackBinary.IsNil(bytes, offset))
+            {
+                readSize = 1;
+                return null;
+            }
+
+            var startOffset = offset;
+            var length = global::MessagePack.MessagePackBinary.ReadMapHeader(bytes, offset, out readSize);
+            offset += readSize;
+
+            var __description__ = default(global::eventDesc);
+            var __hashname__ = default(string);
+            var __csvName__ = default(string);
+            var __csvHash__ = default(string);
+            var __integrationSteps__ = default(int);
+            var __status__ = default(string);
+
+            for (int i = 0; i < length; i++)
+            {
+                var stringKey = global::MessagePack.MessagePackBinary.ReadStringSegment(bytes, offset, out readSize);
+                offset += readSize;
+                int key;
+                if (!____keyMapping.TryGetValueSafe(stringKey, out key))
+                {
+                    readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
+                    goto NEXT_LOOP;
+                }
+
+                switch (key)
+                {
+                    case 0:
+                        __description__ = formatterResolver.GetFormatterWithVerify<global::eventDesc>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 1:
+                        __hashname__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 2:
+                        __csvName__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 3:
+                        __csvHash__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    case 4:
+                        __integrationSteps__ = MessagePackBinary.ReadInt32(bytes, offset, out readSize);
+                        break;
+                    case 5:
+                        __status__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    default:
+                        readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
+                        break;
+                }
+                
+                NEXT_LOOP:
+                offset += readSize;
+            }
+
+            readSize = offset - startOffset;
+
+            var ____result = new global::SavedEventData();
+            ____result.description = __description__;
+            ____result.hashname = __hashname__;
+            ____result.csvName = __csvName__;
+            ____result.csvHash = __csvHash__;
+            ____result.integrationSteps = __integrationSteps__;
+            ____result.status = __status__;
+            return ____result;
+        }
+    }
+
+
+    public sealed class SavedEventsSettingsFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::SavedEventsSettings>
+    {
+
+        readonly global::MessagePack.Internal.AutomataDictionary ____keyMapping;
+        readonly byte[][] ____stringByteKeys;
+
+        public SavedEventsSettingsFormatter()
+        {
+            this.____keyMapping = new global::MessagePack.Internal.AutomataDictionary()
+            {
+                { "numberIntegrated", 0},
+                { "numberKeptAsCsv", 1},
+                { "eventData", 2},
+            };
+
+            this.____stringByteKeys = new byte[][]
+            {
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("numberIntegrated"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("numberKeptAsCsv"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("eventData"),
+                
+            };
+        }
+
+
+        public int Serialize(ref byte[] bytes, int offset, global::SavedEventsSettings value, global::MessagePack.IFormatterResolver formatterResolver)
+        {
+            if (value == null)
+            {
+                return global::MessagePack.MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+            
+            var startOffset = offset;
+            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 3);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[0]);
+            offset += MessagePackBinary.WriteUInt32(ref bytes, offset, value.numberIntegrated);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[1]);
+            offset += MessagePackBinary.WriteUInt32(ref bytes, offset, value.numberKeptAsCsv);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[2]);
+            offset += formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::SavedEventData>>().Serialize(ref bytes, offset, value.eventData, formatterResolver);
+            return offset - startOffset;
+        }
+
+        public global::SavedEventsSettings Deserialize(byte[] bytes, int offset, global::MessagePack.IFormatterResolver formatterResolver, out int readSize)
+        {
+            if (global::MessagePack.MessagePackBinary.IsNil(bytes, offset))
+            {
+                readSize = 1;
+                return null;
+            }
+
+            var startOffset = offset;
+            var length = global::MessagePack.MessagePackBinary.ReadMapHeader(bytes, offset, out readSize);
+            offset += readSize;
+
+            var __numberIntegrated__ = default(uint);
+            var __numberKeptAsCsv__ = default(uint);
+            var __eventData__ = default(global::System.Collections.Generic.List<global::SavedEventData>);
+
+            for (int i = 0; i < length; i++)
+            {
+                var stringKey = global::MessagePack.MessagePackBinary.ReadStringSegment(bytes, offset, out readSize);
+                offset += readSize;
+                int key;
+                if (!____keyMapping.TryGetValueSafe(stringKey, out key))
+                {
+                    readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
+                    goto NEXT_LOOP;
+                }
+
+                switch (key)
+                {
+                    case 0:
+                        __numberIntegrated__ = MessagePackBinary.ReadUInt32(bytes, offset, out readSize);
+                        break;
+                    case 1:
+                        __numberKeptAsCsv__ = MessagePackBinary.ReadUInt32(bytes, offset, out readSize);
+                        break;
+                    case 2:
+                        __eventData__ = formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::SavedEventData>>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
+                    default:
+                        readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
+                        break;
+                }
+                
+                NEXT_LOOP:
+                offset += readSize;
+            }
+
+            readSize = offset - startOffset;
+
+            var ____result = new global::SavedEventsSettings();
+            ____result.numberIntegrated = __numberIntegrated__;
+            ____result.numberKeptAsCsv = __numberKeptAsCsv__;
+            ____result.eventData = __eventData__;
             return ____result;
         }
     }
