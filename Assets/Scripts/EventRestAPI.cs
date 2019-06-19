@@ -12,8 +12,22 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 using evId = System.Collections.Generic.KeyValuePair<long,long>;
+
+
+public delegate void EventListUpdatedHandler();
+public delegate void CurrentEventChangedHandler();
 public class Utilz
 {
+    public static event EventListUpdatedHandler eventListUpdated;
+    public static event CurrentEventChangedHandler currentEventUpdated;
+    public static void UpdateCurEvent()
+    {
+        currentEventUpdated();
+    }
+    public static void UpdateEventList()
+    {
+        eventListUpdated();
+    }
     public static string GenerateSHA256(byte[] bytes)
     {
 
@@ -86,6 +100,14 @@ public class eventDesc
     public string csvName()
     {
         return string.Format("{0}_{1}.csv",run,evn);
+    }
+    public Int32 Compare(eventDesc y)
+    {
+        if (run < y.run) return -1;
+        if (run > y.run) return 1;
+        if (evn > y.run) return 1;
+        if (evn < y.run) return -1;
+        return 0;
     }
 }
 
@@ -214,7 +236,7 @@ public class ProcessEventCsv : ThreadedJob
                 dat.signal = double.Parse(fields[1]);
                 dat.dom = int.Parse(fields[2]);
                 dat.str = int.Parse(fields[3]);
-                dat.time_period = float.Parse(fields[4]);
+               // dat.time_period = float.Parse(fields[4]);
                 curEvent.Add(dat);
                 if (timeMin == -1 || dat.time < timeMin) { timeMin = dat.time; }
                 if (timeMax == -1 || dat.time > timeMax) { timeMax = dat.time; }
@@ -337,7 +359,7 @@ public class ProcessEventCsv : ThreadedJob
     }
 }
 
-[Serializable]
+[Serializable,MessagePackObject(keyAsPropertyName:true)]
 public class SavedEventData
 {
     public eventDesc description;
@@ -348,8 +370,11 @@ public class SavedEventData
     public string status;// maybe enum is better but a hassle
     public bool Corrupt()
     {
+    
         if (description == null) return true;
+    
         if (description.evn < 0) return true;
+      
         if (description.run < 0) return true;
         if (integrationSteps < 2) return true;
         if (csvName!=null && !csvName.EndsWith("csv")) return true;
@@ -361,7 +386,7 @@ public class SavedEventData
         
     }
 }
-[Serializable]
+[Serializable,MessagePackObject(keyAsPropertyName:true)]
 public class SavedEventsSettings
 {
     public UInt32 numberIntegrated =20; //number of preintegrated files to keep
@@ -394,191 +419,6 @@ public class SavedEventsSettings
 public class eventList
 {
     public List<List<string>> events;
-}
-public class EventAccessor
-{
-    public static string mainURL = "https://ar.obolus.com";
-    public static string eventCounter = "nevents";
-    public static string lastEvents = "lastevents";
-    public static string lastEventsBefore = "lasteventsbeforeid";
-    public static string efile = "eventfile";
-    bool gotEventNumber = false;
-    public Int64 nevents=0;
-    public Int64 oldEventNum = 0;
-    public List<eventDesc> events=new List<eventDesc>();
-    HashSet<evId> processedEvents=new HashSet<evId>();
-    public List<eventDesc> lastEventList;
-    bool gotLastEvents = false;
-   
-    
-
-    bool gotLastBefore = false;
-    IEnumerator GetLastEventsBefore(Int64 delta,Int64 runId, Int64 evd)
-    {
-        //inclusive
-        gotLastBefore = false;
-        lastEventList = new List<eventDesc>();
-        string url = String.Format("{0}/{1}/{2}/{3}/{4}", mainURL, lastEventsBefore, delta,runId,evd);
-        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
-        {
-            // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
-            yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
-            {
-                gotLastEvents = false;
-                Debug.Log("Error getting  " + url + " :" + webRequest.error);
-                yield break;
-            }
-            else
-            {
-                JSONNode el = null;
-                try
-                {
-                    el = JSON.Parse(webRequest.downloadHandler.text);
-                }
-                catch (System.Exception e)
-                {
-                    Debug.Log(e);
-                    gotLastEvents = false;
-                    yield break;
-                }
-                if (el["events"] == null)
-                {
-                    gotLastEvents = false;
-                    yield break;
-                }
-                try
-                {
-                    foreach (var eda in el["events"])
-                    {
-                        eventDesc ed = new eventDesc();
-                        if (ed.tryLoadFromArray(eda.Value))
-                        {
-                            lastEventList.Add(ed);
-                        }
-                    }
-
-                    gotLastEvents = true;
-                }
-                catch (Exception e)
-                {
-                    Debug.Log(e);
-                    gotLastEvents = false;
-
-                }
-
-            }
-        }
-    }
-
-    bool gotEventData = false;
-    ProcessEventCsv procJob = null;
-    IEnumerator GetEventData(eventDesc dsc)
-    {
-        gotEventData = false;
-        string url = String.Format("{0}/{1}/{2}/{3}", mainURL, efile,dsc.run,dsc.evn);
-        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
-        {
-            // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
-            yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
-            {
-               
-                Debug.Log("Error getting  " + url + " :" + webRequest.error);
-                yield break;
-            }
-            else
-            {
-                ProcessEventCsv job = new ProcessEventCsv();
-                job.eDesc = dsc;
-                job.eMessage = null;
-                job.InData = webRequest.downloadHandler.text;
-                job.persistPath = Application.persistentDataPath;
-
-                procJob = job;
-                gotEventData = true;
-            }
-        }
-    }
-    //scans for last events
-    bool _busy = false;
-    public bool busy { get { return _busy; } }
-
-    public IEnumerator QueryAndProcess(MonoBehaviour handler) 
-    {
-        _busy = true;
-        gotEventNumber = false;
-        yield return handler.StartCoroutine(GetEventNumber());
-        if(!gotEventNumber)
-        {
-            _busy = false;
-            yield break;
-        }
-        if(nevents==oldEventNum)
-        {
-            Debug.Log(string.Format("No new events detected, {0} currently",nevents));
-            _busy = false;
-            yield break;
-        }
-        if (nevents < oldEventNum)
-        {
-            Debug.Log(string.Format("Events are shrinking?, {0} currently, {1} before", nevents, oldEventNum));
-            _busy = false;
-            yield break;
-        }
-        Int64 delta = nevents - oldEventNum;
-        gotLastEvents = false;
-        yield return handler.StartCoroutine(GetLastEvents(delta));
-        if(!gotLastEvents)
-        {
-            _busy = false;
-            yield break;
-        }
-        if (lastEventList.Count == 0)
-        {
-            _busy = false;
-            yield break;
-        }
-        if (lastEventList.Count!=delta)
-        {
-            Debug.Log(string.Format("Got wrong number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
-
-        }
-        foreach (eventDesc dsc in lastEventList)
-        {
-            yield return handler.StartCoroutine(GetEventData(dsc));
-            if (!gotEventData) continue;
-            if (procJob == null) continue;
-            procJob.Start();
-            yield return handler.StartCoroutine(procJob.WaitFor());
-            if (procJob.eMessage!=null)
-            {
-                Debug.Log(procJob.eMessage);
-            }
-            if(procJob.OutData==null)
-            {
-                Debug.Log("Failed processing");
-                continue;
-            }
-            latestData = procJob.OutData;
-            if (processedEvents.Contains(new evId(dsc.run, dsc.evn)))
-            {
-                Debug.Log(string.Format("Duplicate event? {0}_{1}", dsc.run, dsc.evn));
-            }
-            else
-            {
-                events.Add(dsc);
-                processedEvents.Add(new evId(dsc.run, dsc.evn));
-            }
-
-        }
-        lastEventList.Clear();
-        Debug.Log(string.Format("Done updating, cur events {0}",events.Count));
-        _busy = false;
-    }
-    public fullEventData latestData = null;
 }
 
 public class PrimCache<id,t>
@@ -630,7 +470,12 @@ public class PrimCache<id,t>
 
 public class EventRestAPI : MonoBehaviour
 {
-    EventAccessor nev;
+
+    static EventRestAPI _Instance=null;
+    public static EventRestAPI Instance
+    {
+        get { return _Instance; }
+    }
     public static SavedEventsSettings settings = null;
 
     Dictionary<evId,SavedEventData> savedIndex = new Dictionary<evId, SavedEventData>();
@@ -638,21 +483,55 @@ public class EventRestAPI : MonoBehaviour
     public static volatile bool isDropdownReady = false;
     public static List<eventDesc> notificationsWoken = new List<eventDesc>();
     const string saveFileName = "savedData.json";
+    evId expectedNextEvent = new evId(-1,-1);
+    bool _lifecycleReady = false;
+    public bool lifecycleReady { get { return _lifecycleReady; } }
     // Start is called before the first frame update
+    void Awake()
+    {
+        if (_Instance != null) Destroy(gameObject);
+        else
+            _Instance = this;
+    }
+    void OnDestroy()
+    {
+        _Instance = null;
+    }
     void Start()
     {
+        
         //  string strng= "{\"events\": [[132431, 65009599, \"gfu - gold\"]]}";
         // var el = JSON.Parse(strng);
-        savedIndex = new Dictionary<evId, SavedEventData>();
+        try
+        {
+            CompositeResolver.RegisterAndSetAsDefault(
+              GeneratedResolver.Instance,
+              StandardResolverAllowPrivate.Instance,
+            MessagePack.Unity.UnityResolver.Instance,
+            BuiltinResolver.Instance,
+            AttributeFormatterResolver.Instance,
+            // replace enum resolver
+            DynamicEnumAsStringResolver.Instance,
+            DynamicGenericResolver.Instance,
+            PrimitiveObjectResolver.Instance,
+            // final fallback(last priority)
+            StandardResolver.Instance);
+        }
+        catch (Exception)
+        {
 
-        nev = new EventAccessor();
-        StartCoroutine(nev.QueryAndProcess(this));
+        }
+
+        savedIndex = new Dictionary<evId, SavedEventData>();
         isDropdownReady = false;
+        _lifecycleReady = false;
+        StartCoroutine(Lifecycle());
+       
     }
     void saveSettings()
     {
         if (settings == null) return;
-        string savetxt = JsonUtility.ToJson(settings);
+        string savetxt = MessagePackSerializer.ToJson<SavedEventsSettings>(settings);// JsonUtility.ToJson(settings);
         string fullSaveName = Application.persistentDataPath + "/" + saveFileName;
         try
         {
@@ -706,7 +585,7 @@ public class EventRestAPI : MonoBehaviour
         foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.sdt"))
         {
             string fileName = currentFile.Substring(sourceDir.Length + 1);
-            if (fileName.Length != 36)
+            if (fileName.Length != 68)
             {
                 Debug.LogFormat("Filename {0} is of invalid length {1}, PURGE", fileName, fileName.Length);
                 File.Delete(currentFile);
@@ -757,6 +636,7 @@ public class EventRestAPI : MonoBehaviour
         try
         {
             filedata= File.ReadAllText(fullSaveName, Encoding.UTF8);
+            Debug.Log(filedata);
         }
         catch (Exception e)
         {
@@ -767,8 +647,8 @@ public class EventRestAPI : MonoBehaviour
         if (filedata.Length <= 2) return false;
         try
         {
-            settings=JsonUtility.FromJson<SavedEventsSettings>(filedata);
-        }
+            settings=MessagePackSerializer.Deserialize< SavedEventsSettings >( MessagePackSerializer.FromJson(filedata));
+         }
         catch (Exception e)
         {
             Debug.Log(string.Format("Error parsing settings:  {0}", e));
@@ -786,6 +666,11 @@ public class EventRestAPI : MonoBehaviour
     public static string lastEventsBefore = "lasteventsbeforeid";
     public static string efile = "eventfile";
 
+    fullEventData _currentEvent =null;
+    fullEventData currentEvent
+    {
+        get { return _currentEvent; }
+    }
     //primitive lock
     HashSet<evId> __locks = new HashSet<evId>();
     bool _lock(evId id)
@@ -801,7 +686,7 @@ public class EventRestAPI : MonoBehaviour
         if (__locks.Contains(id)) __locks.Remove(id);
     }
     //preferably, only process event here to avoid races, etc;
-    IEnumerator loadAndSaveSingleEvent(eventDesc ev)
+    IEnumerator loadAndSaveSingleEvent(eventDesc ev,bool saveInt=true,bool saveCSV=true)
     {
         if (ev == null) yield break;
         string dir = Application.persistentDataPath + "/";
@@ -871,9 +756,11 @@ public class EventRestAPI : MonoBehaviour
                         job.eDesc = ev;
                         job.eMessage = null;
                         job.InData = csvText;
-                        job.saveIntegrated = true;
+                        job.saveIntegrated = saveInt;
+                        job.saveCsv = false;
                         job.persistPath = Application.persistentDataPath;
                         job.Start();
+                        sdat.status = "Processing";
                         yield return StartCoroutine(job.WaitFor());
                         if (job.eMessage != null)
                         {
@@ -887,6 +774,7 @@ public class EventRestAPI : MonoBehaviour
                         {
                             cache.pushItem(evid, job.OutData);
                             sdat.hashname = job.hashName;
+                            sdat.integrationSteps = job.timeSpans;
                             _unlock(evid);
                             yield break;
                         }
@@ -928,8 +816,8 @@ public class EventRestAPI : MonoBehaviour
             {
                 ProcessEventCsv job = new ProcessEventCsv();
                 job.eDesc = ev;
-                job.saveCsv = true;
-                job.saveIntegrated = true;
+                job.saveCsv = saveCSV;
+                job.saveIntegrated = saveInt;
                 job.eMessage = null;
                 job.InData = webRequest.downloadHandler.text;
                 job.persistPath = Application.persistentDataPath;
@@ -953,6 +841,7 @@ public class EventRestAPI : MonoBehaviour
                 sdat.hashname = job.hashName;
                 sdat.csvHash = job.csvHash;
                 sdat.csvName = job.csvName;
+                sdat.integrationSteps = job.timeSpans;
                 if (!savedIndex.ContainsKey(evid))
                 {
                     savedIndex[evid] = sdat;
@@ -970,9 +859,14 @@ public class EventRestAPI : MonoBehaviour
             eventDesc toget = notificationsWoken[0];
             notificationsWoken.RemoveAt(0);
             yield return StartCoroutine(loadAndSaveSingleEvent(toget));
+            expectedNextEvent = new evId(toget.run,toget.evn);
         }
+        assignExpected();
     }
-
+    public void reloadNotified()
+    {
+        StartCoroutine(loadNotifiedEvents());
+    }
     IEnumerator GetEventNumber()
     {
         string url = String.Format("{0}/{1}", mainURL, eventCounter);
@@ -1085,7 +979,7 @@ public class EventRestAPI : MonoBehaviour
     {
      
         gotEventNumber = false;
-        yield return handler.StartCoroutine(GetEventNumber());
+        yield return StartCoroutine(GetEventNumber());
         if (!gotEventNumber)
         {
             yield break;
@@ -1103,7 +997,7 @@ public class EventRestAPI : MonoBehaviour
         }
         Int64 delta = nevents - oldEventNum;
         gotLastEvents = false;
-        yield return handler.StartCoroutine(GetLastEvents(delta));
+        yield return StartCoroutine(GetLastEvents(delta));
         if (!gotLastEvents)
         {
             yield break;
@@ -1127,12 +1021,199 @@ public class EventRestAPI : MonoBehaviour
         Debug.Log(string.Format("Done updating, cur events {0}", settings.eventData.Count));
       
     }
+    bool gotLastBefore = false;
+    IEnumerator GetLastEventsBefore(Int64 delta, Int64 runId, Int64 evd)
+    {
+        //inclusive
+        gotLastBefore = false;
+        lastEventList = new List<eventDesc>();
+        string url = String.Format("{0}/{1}/{2}/{3}/{4}", mainURL, lastEventsBefore, delta, runId, evd);
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            // Request and wait for the desired page.
+            webRequest.chunkedTransfer = false;
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError)
+            {
+                gotLastEvents = false;
+                Debug.Log("Error getting  " + url + " :" + webRequest.error);
+                yield break;
+            }
+            else
+            {
+                JSONNode el = null;
+                try
+                {
+                    el = JSON.Parse(webRequest.downloadHandler.text);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log(e);
+                    gotLastEvents = false;
+                    yield break;
+                }
+                if (el["events"] == null)
+                {
+                    gotLastEvents = false;
+                    yield break;
+                }
+                try
+                {
+                    foreach (var eda in el["events"])
+                    {
+                        eventDesc ed = new eventDesc();
+                        if (ed.tryLoadFromArray(eda.Value))
+                        {
+                            lastEventList.Add(ed);
+                        }
+                    }
+
+                    gotLastEvents = true;
+                }
+                catch (Exception e)
+                {
+                    Debug.Log(e);
+                    gotLastEvents = false;
+
+                }
+
+            }
+        }
+    }
+    void pruneFiles()
+    {
+        //prune sdt
+        string pth = Application.persistentDataPath+"/";
+        if (settings.eventData.Count < settings.numberIntegrated && settings.eventData.Count < settings.numberKeptAsCsv) return;
+        if(settings.eventData.Count > settings.numberIntegrated)
+        {
+            int curcnt = 0;
+            for(int i= settings.eventData.Count-1;i>=0;i--)
+            {
+            if(settings.eventData[i].hashname!=null)
+                {
+                    if(File.Exists(pth+ settings.eventData[i].hashname))
+                    {
+                        if(curcnt<settings.numberIntegrated)
+                        {
+                            curcnt++;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                File.Delete(pth + settings.eventData[i].hashname);
+                                settings.eventData[i].hashname = null;
+                            }
+                            catch(Exception)
+                            {
+
+                            }
+                        }
+                    }
+                    else
+                    {
+                        settings.eventData[i].hashname = null;
+                    }
+                }
+            }
+        }
+
+        if (settings.eventData.Count > settings.numberKeptAsCsv)
+        {
+            int curcnt = 0;
+            for (int i = settings.eventData.Count - 1; i >= 0; i--)
+            {
+                if (settings.eventData[i].hashname != null)
+                {
+                    if (File.Exists(pth + settings.eventData[i].csvName))
+                    {
+                        if (curcnt < settings.numberKeptAsCsv)
+                        {
+                            curcnt++;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                File.Delete(pth + settings.eventData[i].csvName);
+                                settings.eventData[i].csvName = null;
+                                settings.eventData[i].csvHash = null;
+                            }
+                            catch (Exception)
+                            {
+
+                            }
+                        }
+                    }
+                    else
+                    {
+                        settings.eventData[i].csvName = null;
+                        settings.eventData[i].csvHash = null;
+                    }
+                }
+            }
+        }
+        saveSettings();
+    }
+
+    IEnumerator fillOutFiles()
+    {
+        //prune sdt
+        string pth = Application.persistentDataPath + "/";
+        int cntCsv = 0;
+            int cntInt = 0;
+        for (int i = settings.eventData.Count - 1; i >= 0; i--)
+        {
+            if (cntCsv >= settings.numberKeptAsCsv && cntInt >= settings.numberIntegrated) break;
+            bool needProcessing = false;
+            bool saveCsv = false;
+            bool saveInt = false;
+            if (settings.eventData[i].hashname != null)
+            {
+                if (File.Exists(pth + settings.eventData[i].hashname))
+                {
+                    cntInt++;
+                }
+                else
+                {
+                    settings.eventData[i].hashname = null;
+                }
+            }
+            if (settings.eventData[i].hashname == null && cntInt < settings.numberIntegrated)
+            { saveInt = true; needProcessing = true; }
+
+            if (settings.eventData[i].csvName != null)
+            {
+                if (File.Exists(pth + settings.eventData[i].csvName))
+                {
+
+                    cntCsv++;
+                }
+                else
+                {
+                    settings.eventData[i].csvName = null;
+                    settings.eventData[i].csvHash = null;
+                }
+            }
+            if (settings.eventData[i].csvName == null && cntCsv < settings.numberKeptAsCsv)
+            { saveCsv = true; needProcessing = true; }
+            if (needProcessing)
+            {
+                yield return StartCoroutine(loadAndSaveSingleEvent(settings.eventData[i].description, saveInt, saveCsv));
+            }
+
+        }
+        pruneFiles();
+        saveSettings();
+    }
     IEnumerator Lifecycle()
     {
         string fullSaveName = Application.persistentDataPath + "/" + saveFileName;
         string sourceDir = Application.persistentDataPath;
         if (!tryLoadingSave(fullSaveName))
         {
+            Debug.Log("Could not read settings, repairing");
             yield return StartCoroutine(repairSave());
             if (!tryLoadingSave(fullSaveName))
             {
@@ -1151,10 +1232,12 @@ public class EventRestAPI : MonoBehaviour
         }
         //3. Scan folder for files not mentioned in saved data. Remove them.
         HashSet<string> mentioned = new HashSet<string>();
+        Debug.Log(settings.eventData.Count);
         foreach (SavedEventData evd in settings.eventData)
         {
             if (evd.csvName != null) mentioned.Add(evd.csvName);
             if (evd.hashname != null) mentioned.Add(evd.hashname);
+            Debug.LogFormat("Mentioned {0}", evd.csvName);
         }
         foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.csv"))
         {
@@ -1178,7 +1261,113 @@ public class EventRestAPI : MonoBehaviour
         //4. If woken up by notification tap - try getting event data if we don't have it in the list as coroutine...
         StartCoroutine(loadNotifiedEvents());
         //5. Run network update for eventnum we don't seem to have. Save up to set number of files from new ones.
-        yield return StartCoroutine(OptimisticUpdate()); 
+        yield return StartCoroutine(OptimisticUpdate());
+        pruneFiles();
+        cache.Prune();
+        //6. Run a full network update (with paging) as coroutine to fill up gaps if any
+        yield return StartCoroutine(runFullUpdate());
+        //7.Download files and process files to fill up settings quota.
+        _lifecycleReady = true;
+        yield return StartCoroutine(fillOutFiles());
+        //8. Prune excess files (save json after every step)  -done in above
+    }
+    public IEnumerator runFullUpdate()
+    {
+        gotLastEvents = false;
+        yield return StartCoroutine(GetLastEvents(1));
+        if (gotLastEvents && lastEventList.Count >= 1)
+        {
+            long page = 10;
+            HashSet<evId> updCheck = new HashSet<evId>();
+            bool left = true;
+            while (left)
+            {
+                left = false;
+                lastEventList.Sort((x, y) => { return x.Compare(y); });
+                bool upd = false;
+                foreach (eventDesc ev in lastEventList)
+                {
+                    
+                    evId eid = new evId(ev.run, ev.evn);
+                    if (!updCheck.Contains(eid))
+                    {
+                        updCheck.Add(eid);
+                        left = true;
+                    }
+                    if(!savedIndex.ContainsKey(eid))
+                    {
+                        SavedEventData dat = new SavedEventData();
+                        dat.csvHash = null;
+                        dat.csvName = null;
+                        dat.description = ev;
+                        dat.integrationSteps = 2;
+                        dat.status = "Not loaded";
+                        dat.hashname = null;
+                        settings.eventData.Add(dat);
+                        savedIndex[eid] = dat;
+                        upd = true;
+                    }
+                }
+                if(upd)
+                {
+                    settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
+                    saveSettings();
+                }
+                eventDesc curLastEv = lastEventList[0];
+                yield return StartCoroutine(GetLastEventsBefore(page, curLastEv.run, curLastEv.evn));
+                if (!gotLastBefore) left = false;
+            }
+            pruneFiles();
+            settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
+            saveSettings();
+        }
+    }
+
+    void assignExpected()
+    {
+        if (expectedNextEvent.Key == -1) return;
+        if (!cache.checkCache(expectedNextEvent)) return;
+        fullEventData dat = cache.getItem(expectedNextEvent);
+        if (dat == null) return;
+        if(dat.description==null)
+        {
+            Debug.Log("Corrupt DATA");
+            return;
+        }
+        if(_currentEvent==null)
+        {
+            _currentEvent = dat;
+            Utilz.UpdateCurEvent();
+            return;
+        }
+        if(_currentEvent.description.run!= dat.description.run|| _currentEvent.description.evn != dat.description.evn)
+        {
+            _currentEvent = dat;
+            Utilz.UpdateCurEvent();
+            return;
+        }
+    }
+    IEnumerator processNewNotification_impl(eventDesc dsc)
+    {
+        evId evid = new evId(dsc.run, dsc.evn);
+        if(cache.checkCache(evid))
+        {
+            //duplicate? or preloaded on previous update
+          //  Debug.LogFormat("Potentially duplicate or preloaded event {0} / {1}",dsc.run,dsc.evn);
+            yield break;
+        }
+        yield return StartCoroutine(OptimisticUpdate());
+        if (!cache.checkCache(evid))
+        { //odd...
+            yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
+        }
+        assignExpected();
+    }
+    public void processNewNotification(eventDesc dsc,bool tryAssign)
+    {
+        if(tryAssign)
+            expectedNextEvent = new evId(dsc.run, dsc.evn);
+        StartCoroutine(processNewNotification_impl(dsc));
     }
     // Update is called once per frame
     void Update()

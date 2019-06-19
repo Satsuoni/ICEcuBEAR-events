@@ -120,15 +120,33 @@ public class FirebaseCentral : MonoBehaviour
         if (e.Message.Notification != null)
         {
             NotificationUI.spawnNotification(e.Message.Notification.Title, e.Message.Notification.Body, newEvent);
+            if(EventRestAPI.Instance!=null)
+            {
+                EventRestAPI.Instance.processNewNotification(newEvent, false);
+            }
+            else
+            { //we are asleep?
+                EventRestAPI.notificationsWoken.Add(newEvent);
+            }
         }
         else
         {
             //probably means that you got message from clicking on notification outside
             //do not spawn notification, just process data... 
             EventRestAPI.notificationsWoken.Add(newEvent); //no guarantee this will fire first... 
+            if(EventRestAPI.Instance != null&& EventRestAPI.Instance.lifecycleReady)
+            {
+                EventRestAPI.Instance.reloadNotified();
+            }
         }
     }
 
+    void Update()
+    {
+        if()
+        {
 
+        }
+    }
   
 }
