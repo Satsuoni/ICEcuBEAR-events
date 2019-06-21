@@ -667,7 +667,7 @@ public class EventRestAPI : MonoBehaviour
     public static string efile = "eventfile";
 
     fullEventData _currentEvent =null;
-    fullEventData currentEvent
+    public fullEventData currentEvent
     {
         get { return _currentEvent; }
     }
@@ -977,7 +977,7 @@ public class EventRestAPI : MonoBehaviour
     bool gotLastEvents = false;
     public IEnumerator OptimisticUpdate()
     {
-     
+        int oldCount = settings.eventData.Count;
         gotEventNumber = false;
         yield return StartCoroutine(GetEventNumber());
         if (!gotEventNumber)
@@ -1018,6 +1018,8 @@ public class EventRestAPI : MonoBehaviour
         }
         lastEventList.Clear();
         saveSettings();
+        if (oldCount != settings.eventData.Count)
+            Utilz.UpdateEventList();
         Debug.Log(string.Format("Done updating, cur events {0}", settings.eventData.Count));
       
     }
@@ -1237,7 +1239,7 @@ public class EventRestAPI : MonoBehaviour
         {
             if (evd.csvName != null) mentioned.Add(evd.csvName);
             if (evd.hashname != null) mentioned.Add(evd.hashname);
-            Debug.LogFormat("Mentioned {0}", evd.csvName);
+            //Debug.LogFormat("Mentioned {0}", evd.csvName);
         }
         foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.csv"))
         {
@@ -1258,6 +1260,7 @@ public class EventRestAPI : MonoBehaviour
             }
         }
         isDropdownReady = true;
+        Utilz.UpdateEventList();
         //4. If woken up by notification tap - try getting event data if we don't have it in the list as coroutine...
         StartCoroutine(loadNotifiedEvents());
         //5. Run network update for eventnum we don't seem to have. Save up to set number of files from new ones.
@@ -1274,6 +1277,7 @@ public class EventRestAPI : MonoBehaviour
     public IEnumerator runFullUpdate()
     {
         gotLastEvents = false;
+        int oldCount = settings.eventData.Count;
         yield return StartCoroutine(GetLastEvents(1));
         if (gotLastEvents && lastEventList.Count >= 1)
         {
@@ -1321,6 +1325,8 @@ public class EventRestAPI : MonoBehaviour
             settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
             saveSettings();
         }
+        if (oldCount != settings.eventData.Count)
+            Utilz.UpdateEventList();
     }
 
     void assignExpected()
@@ -1349,11 +1355,13 @@ public class EventRestAPI : MonoBehaviour
     }
     IEnumerator processNewNotification_impl(eventDesc dsc)
     {
+        int oldCount = settings.eventData.Count;
         evId evid = new evId(dsc.run, dsc.evn);
         if(cache.checkCache(evid))
         {
             //duplicate? or preloaded on previous update
-          //  Debug.LogFormat("Potentially duplicate or preloaded event {0} / {1}",dsc.run,dsc.evn);
+            //  Debug.LogFormat("Potentially duplicate or preloaded event {0} / {1}",dsc.run,dsc.evn);
+            assignExpected();
             yield break;
         }
         yield return StartCoroutine(OptimisticUpdate());
@@ -1362,6 +1370,8 @@ public class EventRestAPI : MonoBehaviour
             yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
         }
         assignExpected();
+        if (oldCount != settings.eventData.Count)
+            Utilz.UpdateEventList();
     }
     public void processNewNotification(eventDesc dsc,bool tryAssign)
     {
