@@ -127,8 +127,8 @@ public class DOMController : MonoBehaviour
     List<eventData> curEvent = new List<eventData>();
     [SerializeField]
     public singleBallList[] ballArray = null;//new int[5][];  
-    Dictionary<int, Dictionary<int, ballIntegratedData>> affBalls = new Dictionary<int, Dictionary<int, ballIntegratedData>>();
-    List<ballIntegratedData> collectedBalls = new List<ballIntegratedData>();
+   // Dictionary<int, Dictionary<int, ballIntegratedData>> affBalls = new Dictionary<int, Dictionary<int, ballIntegratedData>>();
+    //List<ballIntegratedData> collectedBalls = new List<ballIntegratedData>();
   
     void Start()
     {
@@ -144,95 +144,8 @@ public class DOMController : MonoBehaviour
             gapControl = gapCon.GetComponent<Slider>();
         }
         Debug.Log(string.Format("Lengthh {0}", ballArray.Length));
-        TextAsset eventl = Resources.Load("Data/Hydrangea") as TextAsset;
-        string fs = eventl.text;
-        string[] fLines = null;
-        if (fs.Contains("\r\n"))
-        {
-            fLines = System.Text.RegularExpressions.Regex.Split(fs, "\r\n");
-        }
-        else
-        {
-            fLines = System.Text.RegularExpressions.Regex.Split(fs, "\n|\r");
-
-        }
-        float timeMin=-1f, timeMax=-1f;
-        double signalMin = -1f, signalMax = -1f;
-        foreach (var line in fLines)
-        {
-            try
-            {
-                string[] fields = line.Split(',');
-                eventData dat = new eventData();
-                dat.time = float.Parse(fields[0]);
-                dat.signal = double.Parse(fields[1]);
-                dat.dom = int.Parse(fields[2]);
-                dat.str = int.Parse(fields[3]);
-                dat.time_period = float.Parse(fields[4]);
-                curEvent.Add(dat);
-                if (timeMin == -1 || dat.time < timeMin) { timeMin = dat.time; }
-                if (timeMax == -1 || dat.time > timeMax) { timeMax = dat.time; }
-                if (signalMin == -1 || dat.signal < signalMin) { signalMin = dat.signal; }
-                if (signalMax == -1 || dat.signal > signalMax) { signalMax = dat.signal; }
-            }
-            catch (System.Exception e)
-            {
-                 Debug.Log(e);
-                Debug.Log(line);
-
-               Debug.Log(line.Split(','));
-            }
-        }
-        float dt = timeMax - timeMin + 0.001f; 
-        double ds = signalMax - signalMin + 0.001;
-        curEvent.Sort((x, y) => x.time.CompareTo(y.time));
-        foreach (eventData ev in curEvent)
-        {
-            float tScale = (ev.time - timeMin) / (dt);
-            int tspn= (int)(Mathf.RoundToInt(tScale * timeSpans));
-            if (tspn >= timeSpans) tspn = timeSpans - 1;
-            float sScale = (float)((ev.signal - signalMin) / (ds));
-            if (!affBalls.ContainsKey(ev.str)) affBalls[ev.str] = new Dictionary<int, ballIntegratedData>();
-            if (!affBalls[ev.str].ContainsKey(ev.dom))
-            {
-                ballIntegratedData nball = new ballIntegratedData();
-                nball.affected = true;
-                nball.stId = ev.str;
-                nball.domId = ev.dom;
-                nball.icharge = new double[timeSpans];
-                for (int i = 0; i < timeSpans; i++)
-                {
-                    if (i < tspn)
-                        nball.icharge[i] = 0;
-                    else
-                        nball.icharge[i] = (double)ev.signal;
-                }
-                nball.mintime = tScale;
-                nball.maxtime = tScale;
-                affBalls[ev.str][ev.dom] = nball;
-            }
-            else
-            {
-                ballIntegratedData nball = affBalls[ev.str][ev.dom];
-                nball.maxtime = tScale;
-                double incr = nball.icharge[tspn] + (double)ev.signal;
-                for (int i = tspn; i < timeSpans; i++)
-                {
-                    nball.icharge[i] = incr;
-                }
-            }
-          //  ballArray[ev.str].balls[ev.dom].setScale(sScale*20.0f+1.0f);
-          //  Color clr = Color.Lerp(Color.red, Color.green,tScale); 
-          //  ballArray[ev.str].balls[ev.dom].setColor(clr);
-        }
-        collectedBalls.Clear();
-        foreach (KeyValuePair<int,Dictionary<int,ballIntegratedData>> kp in affBalls)
-        {
-            foreach(KeyValuePair<int,ballIntegratedData> bd in kp.Value)
-            {
-                collectedBalls.Add(bd.Value);
-            }
-        }
+       
+   
         foreach(singleBallList lst in ballArray)
         {
             foreach(singleBall bl in lst.balls)
@@ -244,28 +157,19 @@ public class DOMController : MonoBehaviour
                 }
             }
         }
-        fullEventData ed = new fullEventData();
-        ed.eventName = "Kloppo";
-        ed.ballData = collectedBalls;
-        ed.isteps = timeSpans;
-        CompositeResolver.RegisterAndSetAsDefault(
-            GeneratedResolver.Instance,
-            StandardResolverAllowPrivate.Instance,
-MessagePack.Unity.UnityResolver.Instance,
-BuiltinResolver.Instance,
-AttributeFormatterResolver.Instance,
-// replace enum resolver
-DynamicEnumAsStringResolver.Instance,
-DynamicGenericResolver.Instance,
-PrimitiveObjectResolver.Instance,
-// final fallback(last priority)
-StandardResolver.Instance);
-        var bytes = MessagePackSerializer.Serialize(ed);
-        FileStream file = File.Create(Application.persistentDataPath + "/hydra.sdt");
-        file.Write(bytes,0,bytes.Length);
-        file.Close();
+        
+
         // size = scale * ( 0.2 * accum ) ** power
         updateToSet();
+    }
+    void Awake()
+    {
+        Utilz.currentEventUpdated += updateForce;
+        Debug.Log("Nyanya");
+    }
+    void OnDestroy()
+    {
+        Utilz.currentEventUpdated -= updateForce;
     }
     public void registerStringId(int id)
     {
@@ -304,14 +208,28 @@ StandardResolver.Instance);
     }
     float prevSld = 0.0f;
     List<ballIntegratedData> beforeBalls = null;
-    public void updateToSet()
+    public void updateForce()
     {
+        updateToSet(true);
+    }
+    public void updateToSet(bool force=false)
+    {
+        if(EventRestAPI.Instance==null)
+        {
+            Debug.Log("Nyanya: no instance");
+            return;
+        }
+        if (EventRestAPI.Instance.currentEvent == null)
+        {
+            Debug.Log("Nyanya: noevent");
+            return;
+        }
         float nsld = 0.0f;
         if (slid != null)
         {
             nsld = slid.value;
         }
-        if (nsld == prevSld &&beforeBalls!=null) return;
+        if (nsld == prevSld &&beforeBalls!=null&&!force) return;
         if(beforeBalls!=null)
         {
             foreach(ballIntegratedData id in beforeBalls)
@@ -326,7 +244,8 @@ StandardResolver.Instance);
         float start = nsld;
         float end = nsld + tgap;
         if (end > 1.0f) end = 1.0f;
-        foreach(ballIntegratedData ball in collectedBalls)
+        List<ballIntegratedData> collectedBalls = EventRestAPI.Instance.currentEvent.ballData;
+        foreach (ballIntegratedData ball in collectedBalls)
         {
            if(ball.ballAffectedInTs(start,end))
             {

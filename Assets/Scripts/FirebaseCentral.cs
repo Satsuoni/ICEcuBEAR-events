@@ -143,10 +143,7 @@ public class FirebaseCentral : MonoBehaviour
 
     void Update()
     {
-        if()
-        {
-
-        }
+      
     }
   
 }
