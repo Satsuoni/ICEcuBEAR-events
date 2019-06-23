@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public class FirebaseCentral : MonoBehaviour
 {
-    public Text txt;
+
     Firebase.FirebaseApp app;
     public void Start()
     {
@@ -107,9 +107,7 @@ public class FirebaseCentral : MonoBehaviour
         {
             Debug.Log("Got message with data only? ");
         }
-        
-        //if (txt != null)
-         //   txt.text = "Message " + e.Message.From + e.Message.Notification.Body;
+ 
 
         eventDesc newEvent = tryLoadingEventDesc(e.Message.Data);
         if (newEvent == null)
