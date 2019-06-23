@@ -1331,11 +1331,13 @@ public class EventRestAPI : MonoBehaviour
 
     void assignExpected()
     {
+        Debug.Log("Assigning expected");
         if (expectedNextEvent.Key == -1) return;
         if (!cache.checkCache(expectedNextEvent)) return;
         fullEventData dat = cache.getItem(expectedNextEvent);
         if (dat == null) return;
-        if(dat.description==null)
+        Debug.Log("Got cached");
+        if (dat.description==null)
         {
             Debug.Log("Corrupt DATA");
             return;
@@ -1357,14 +1359,16 @@ public class EventRestAPI : MonoBehaviour
     {
         int oldCount = settings.eventData.Count;
         evId evid = new evId(dsc.run, dsc.evn);
+        Debug.Log(dsc);
         if(cache.checkCache(evid))
         {
             //duplicate? or preloaded on previous update
-            //  Debug.LogFormat("Potentially duplicate or preloaded event {0} / {1}",dsc.run,dsc.evn);
+              //Debug.LogFormat("Potentially duplicate or preloaded event {0} / {1}",dsc.run,dsc.evn);
             assignExpected();
             yield break;
         }
         yield return StartCoroutine(OptimisticUpdate());
+        Debug.Log("oop");
         if (!cache.checkCache(evid))
         { //odd...
             yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
@@ -1372,6 +1376,34 @@ public class EventRestAPI : MonoBehaviour
         assignExpected();
         if (oldCount != settings.eventData.Count)
             Utilz.UpdateEventList();
+    }
+    IEnumerator processSwitch(eventDesc dsc)
+    {
+        int oldCount = settings.eventData.Count;
+        evId evid = new evId(dsc.run, dsc.evn);
+        if (cache.checkCache(evid))
+        {
+            //duplicate? or preloaded on previous update
+            //Debug.LogFormat("Potentially duplicate or preloaded event {0} / {1}",dsc.run,dsc.evn);
+            assignExpected();
+            yield break;
+        }
+        yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
+
+        Debug.Log("oop");
+        if (!cache.checkCache(evid))
+        { //odd...
+
+            yield return StartCoroutine(OptimisticUpdate());
+        }
+        assignExpected();
+        if (oldCount != settings.eventData.Count)
+            Utilz.UpdateEventList();
+    }
+    public void SwitchToEvent(eventDesc dsc)
+    {
+        expectedNextEvent = new evId(dsc.run, dsc.evn);
+        StartCoroutine(processSwitch(dsc));
     }
     public void processNewNotification(eventDesc dsc,bool tryAssign)
     {

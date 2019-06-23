@@ -77,10 +77,11 @@ public class DropdownManager : MonoBehaviour
     }
     void DropdownValueChanged(Dropdown change)
     {
-        //Debug.LogFormat("New val :{0}",change.value);
+      
         if(change.value<curOptions.Count)
         {
-            EventRestAPI.Instance.processNewNotification(curOptions[change.value], true);
+            Debug.LogFormat("New val :{0}", change.value);
+            EventRestAPI.Instance.SwitchToEvent(curOptions[change.value]);
         }
     }
 }
