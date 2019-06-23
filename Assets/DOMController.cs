@@ -150,7 +150,10 @@ public class DOMController : MonoBehaviour
     RangeSlider timeSpan;
     Slider deltaController;
     Slider timeController;
+    Slider zoomControl;
     const int timeSpans = 2500;
+    public Transform footPoint;
+    public Transform footAlign;
     List<eventData> curEvent = new List<eventData>();
     [SerializeField]
     public singleBallList[] ballArray = null;//new int[5][];  
@@ -185,6 +188,15 @@ public class DOMController : MonoBehaviour
             if(timeSpan!=null)
             {
                 timeSpan.onValueChanged.AddListener(delegate { ValueChange(); });
+            }
+        }
+        GameObject zCon = GameObject.Find("zoomController");
+        if (zCon != null)
+        {
+            zoomControl = zCon.GetComponent<Slider>();
+            if(zoomControl!=null)
+            {
+                zoomControl.onValueChanged.AddListener(delegate { zoomChange(); });
             }
         }
         foreach (singleBallList lst in ballArray)
@@ -320,7 +332,20 @@ public class DOMController : MonoBehaviour
     {
         updateToSet();
     }
-    public void setBall(int sid, int did,singleBall sball)
+    public void zoomChange()
+    {
+        if (zoomControl == null) return;
+        float nzoom = zoomControl.value;
+        if (nzoom < 0.001f) nzoom = 0.001f;
+        if (nzoom > 0.015f) nzoom = 0.015f;
+        transform.localScale = new Vector3(nzoom,nzoom,nzoom);
+        if(footPoint!=null && footAlign!=null)
+        {
+            Vector3 v1 = footPoint.position - footAlign.position;
+            transform.position = transform.position + v1;
+        }
+    }
+        public void setBall(int sid, int did,singleBall sball)
     {
         registerDomId(sid, did);
         ballArray[sid].balls[did] = sball;
