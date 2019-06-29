@@ -149,8 +149,10 @@ public class DOMController : MonoBehaviour
     public float delay = 1f;
     public float tgap = 0.1f;
     float baseScale = 1.2f;
-    double power = 0.15;
-    double sscale = 5.0;
+   // double power = 0.15;
+    //double _sscale = 5.0;
+
+
     RangeSlider timeSpan;
     Slider deltaController;
     Slider timeController;
@@ -285,6 +287,7 @@ public class DOMController : MonoBehaviour
         KeyValuePair<float, float> rng = getDefaultRange();
         timeSpan.SetValueWithoutNotify(rng.Key);
         timeSpan.SetValue2WithoutNotify(rng.Value);
+       
         if (timeController.value < rng.Key) timeController.SetValueWithoutNotify(rng.Key);
         if (timeController.value > rng.Value) timeController.SetValueWithoutNotify(rng.Value);
 
@@ -406,7 +409,7 @@ public class DOMController : MonoBehaviour
                 double sig = ball.getInSpan(start, end, tgap, nsld,ref tscl);
                 if (sig != -1)
                 {
-                    double scale = (double)baseScale + (sscale * Math.Pow((0.2 * sig), power));
+                    double scale = (double)baseScale + (EventRestAPI.settings.scaleMul * Math.Pow((0.2 * sig), EventRestAPI.settings.scalePower));
                     ballArray[ball.stId].balls[ball.domId].setScale((float)scale);
                     ballArray[ball.stId].balls[ball.domId].setColor(colorFromBasicMap(tscl));
                 }

@@ -22,10 +22,12 @@ public class Utilz
     public static event CurrentEventChangedHandler currentEventUpdated;
     public static void UpdateCurEvent()
     {
+        if(currentEventUpdated!=null)
         currentEventUpdated();
     }
     public static void UpdateEventList()
     {
+        if(eventListUpdated!=null)
         eventListUpdated();
     }
     public static string GenerateSHA256(byte[] bytes)
@@ -420,9 +422,9 @@ public class SavedEventsSettings
         if (scaleMul > 20) scaleMul = 5f;
         return true;
     }
-    public float animationSpeed;
-    public float scalePower;
-    public float scaleMul;
+    public float animationSpeed=0.1f;
+    public float scalePower=0.15f;
+    public float scaleMul=5.0f;
 }
 
 
@@ -488,7 +490,6 @@ public class EventRestAPI : MonoBehaviour
         get { return _Instance; }
     }
     public static SavedEventsSettings settings = null;
-
     Dictionary<evId,SavedEventData> savedIndex = new Dictionary<evId, SavedEventData>();
     PrimCache<evId, fullEventData> cache = new PrimCache<evId, fullEventData>();
     public static volatile bool isDropdownReady = false;
@@ -569,7 +570,7 @@ public class EventRestAPI : MonoBehaviour
     public void updatedAnim(float num)
     {
         settings.animationSpeed = num;
-        if (settings.animationSpeed < 0.05f) settings.animationSpeed = 0.05f;
+        if (settings.animationSpeed < 0.01f) settings.animationSpeed = 0.01f;
         StartCoroutine(saveWithDelay());
     }
 
@@ -1324,6 +1325,14 @@ public class EventRestAPI : MonoBehaviour
         _lifecycleReady = true;
         yield return StartCoroutine(fillOutFiles());
         //8. Prune excess files (save json after every step)  -done in above
+    }
+
+    public void demandFullUpdate()
+    {
+        if(isDropdownReady)
+        {
+            StartCoroutine(runFullUpdate());
+        }
     }
     public IEnumerator runFullUpdate()
     {
