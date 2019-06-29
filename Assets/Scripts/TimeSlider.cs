@@ -5,12 +5,34 @@ using UnityEngine.UI;
 
 public class TimeSlider : MonoBehaviour
 {
-    public static float playbackSpeed = 0.1f;
+   // public static float playbackSpeed = 0.1f;
     Slider main;
     public Button playButton;
     bool isPlaying = false;
     public Sprite play;
     public Sprite pause;
+    public Toggle lockToggle;
+    public RangeSlider timeVl;
+    float upperLimit
+    {
+        get
+        {
+            if (lockToggle == null) return 1.0f;
+            if(timeVl==null) return 1.0f;
+            if (!lockToggle.isOn) return 1.0f;
+            return timeVl.value2;
+        }
+    }
+    float lowerLimit
+    {
+        get
+        {
+            if (lockToggle == null) return 0.0f;
+            if (timeVl == null) return 0.0f;
+            if (!lockToggle.isOn) return 0.0f;
+            return timeVl.value;
+        }
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -24,11 +46,11 @@ public class TimeSlider : MonoBehaviour
         if(isPlaying)
         {
            float  dt = Time.deltaTime;
-            float dv = dt * playbackSpeed;
+            float dv = dt * EventRestAPI.settings.animationSpeed*(upperLimit-lowerLimit);
             playValue += dv;
-            if(playValue>=1.0f)
+            if(playValue>=upperLimit||upperLimit-lowerLimit<=0)
             {
-                playValue = 0.0f;
+                playValue = lowerLimit;
 
                 Pause();
             }
@@ -45,10 +67,25 @@ public class TimeSlider : MonoBehaviour
     void Play()
     {
         if (isPlaying) return;
+        if (lockToggle.isOn)
+        {
+            if (main.value < lowerLimit) main.value = lowerLimit;
+            if (main.value > upperLimit) main.value = upperLimit;
+
+        }
         playValue = main.value;
         playButton.GetComponent<Image>().sprite = pause;
         isPlaying = true;
         playValue = main.value;
+    }
+    public void onToggle()
+    {
+        if(lockToggle.isOn)
+        {
+            if (main.value < lowerLimit) main.value = lowerLimit;
+            if (main.value > upperLimit) main.value = upperLimit;
+
+        }
     }
     public void valueChanged()
     {
