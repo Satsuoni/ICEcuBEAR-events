@@ -69,6 +69,7 @@ public class ballIntegratedData
         //acc = diff;
         return true;
     }
+  
    public double getInSpan(float start, float end,float span,float tim,ref float tscale)
     {
 
@@ -135,7 +136,10 @@ public class fullEventData
     public int isteps;
     [Key(3)]
     public eventDesc description;
-
+    [Key(4)]
+    public float minPureTime;
+    [Key(5)]
+    public float maxPureTime;
 
 }
 public class DOMController : MonoBehaviour
@@ -256,6 +260,21 @@ public class DOMController : MonoBehaviour
     {
         if (t < 0) t = 0;
         if (t > 1) t = 1;
+        if (timeSpan!=null&&timeSpan.betweenImage!=null)
+        {
+           
+            /// need read/write enabled on texture.
+            Color c= timeSpan.betweenImage.texture.GetPixelBilinear(t, 0.5f);
+            if(c!=null)
+            {
+                return c;
+            }
+            else
+            {
+                Debug.Log("Between texture needs fixing");
+            }
+        }
+       
         if(t<=0.5f) return Color.Lerp(Color.red, Color.green, t*2.0f);
         return Color.Lerp(Color.green, Color.blue, (t-0.5f) * 2.0f);
     }
@@ -263,7 +282,81 @@ public class DOMController : MonoBehaviour
     List<ballIntegratedData> beforeBalls = null;
     public void updateForce()
     {
+        KeyValuePair<float, float> rng = getDefaultRange();
+        timeSpan.SetValueWithoutNotify(rng.Key);
+        timeSpan.SetValue2WithoutNotify(rng.Value);
+        if (timeController.value < rng.Key) timeController.SetValueWithoutNotify(rng.Key);
+        if (timeController.value > rng.Value) timeController.SetValueWithoutNotify(rng.Value);
+
         updateToSet(true);
+    }
+    public KeyValuePair<float, float> getDefaultRange()
+    {
+        if(EventRestAPI.Instance==null)
+        {
+            return new KeyValuePair<float, float>(0, 1);
+        }
+        fullEventData evv = EventRestAPI.Instance.currentEvent;
+        List<ballIntegratedData> collectedBalls = EventRestAPI.Instance.currentEvent.ballData;
+        if(collectedBalls==null)
+        {
+            return new KeyValuePair<float, float>(0, 1);
+        }
+        double mxcharge=0;
+        ballIntegratedData mball=null;
+        foreach (ballIntegratedData ball in collectedBalls)
+        {
+            if(ball.icharge[ball.icharge.Length-1]>mxcharge)
+            {
+                mball = ball;
+                mxcharge = ball.icharge[ball.icharge.Length - 1];
+            }
+        }
+       // Debug.LogFormat("Mball{0} {1} {2}",mball,mball.mintime,mball.maxtime);
+        if (mball==null)
+        {
+            return new KeyValuePair<float, float>(0, 1);
+        }
+        int pos = 0;
+        for(pos=0;pos<mball.icharge.Length;pos++)
+        {
+            if (mball.icharge[pos] > 0) break;
+        }
+        if(Mathf.Approximately(mball.maxtime - mball.mintime,0.0f))
+            return new KeyValuePair<float, float>(0, 1);
+
+        if (evv.maxPureTime == 0 && evv.minPureTime >= evv.maxPureTime)
+        {
+            float ptime = (((float)pos) / ((float)(mball.icharge.Length))) * (mball.maxtime - mball.mintime);
+        
+            float ltime0 = ptime * 0.9f;
+            float ltime1 = ptime * 1.5f;
+            float cntime0 = ltime0 / (mball.maxtime - mball.mintime);
+            float cntime1 = ltime1 / (mball.maxtime - mball.mintime);
+            if (cntime0 < 0) cntime0 = 0;
+            if (cntime1 > 1) cntime1 = 1;
+            if (cntime0 > cntime1)
+            {
+                return new KeyValuePair<float, float>(0, 1);
+            }
+            return new KeyValuePair<float, float>(cntime0, cntime1);
+        }
+        else
+        {
+            float ptime = (((float)pos) / ((float)(mball.icharge.Length))) * (evv.maxPureTime - evv.minPureTime);
+            float scl = 1f;
+            float ltime0 = ptime - scl * 1000;
+            float ltime1 = ptime + scl * 5000;
+            float cntime0 = ltime0 / (evv.maxPureTime - evv.minPureTime);
+            float cntime1 = ltime1 / (evv.maxPureTime - evv.minPureTime);
+            if (cntime0 < 0) cntime0 = 0;
+            if (cntime1 > 1) cntime1 = 1;
+            if (cntime0 > cntime1)
+            {
+                return new KeyValuePair<float, float>(0, 1);
+            }
+            return new KeyValuePair<float, float>(cntime0, cntime1);
+        }
     }
     public void updateToSet(bool force=false)
     {

@@ -315,6 +315,7 @@ namespace UnityEngine.UI
         /// }
         /// </code>
         /// </example>
+        public Sprite betweenImage;
         public float normalizedValue
         {
             get
@@ -524,6 +525,11 @@ namespace UnityEngine.UI
             {
                 m_BetweenTransform = m_BetweenRect.transform;
                 m_BetweenImage = m_BetweenRect.GetComponent<Image>();
+                if(betweenImage!=null&&m_BetweenImage!=null)
+                {
+                    m_BetweenImage.sprite = betweenImage;
+                }
+
                 if (m_BetweenTransform.parent != null)
                     m_BetweenContainerRect = m_BetweenTransform.parent.GetComponent<RectTransform>();
             }

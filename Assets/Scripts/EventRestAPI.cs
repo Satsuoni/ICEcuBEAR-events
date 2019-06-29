@@ -307,6 +307,8 @@ public class ProcessEventCsv : ThreadedJob
         }
   
         fullEventData ed = new fullEventData();
+        ed.minPureTime = timeMin;
+        ed.minPureTime = timeMax;
         ed.description = eDesc;
 
         if(eDesc.humName!=null)
