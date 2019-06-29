@@ -412,8 +412,17 @@ public class SavedEventsSettings
         {
             eventData.Remove(dat);
         }
+        if (animationSpeed < 0.1f) animationSpeed = 0.2f;
+        if (animationSpeed > 1f) animationSpeed = 0.2f;
+        if (scalePower < 0.04f) scalePower = 0.15f;
+        if (scalePower > 0.3f) scalePower = 0.15f;
+        if (scaleMul < 1) scaleMul = 5f;
+        if (scaleMul > 20) scaleMul = 5f;
         return true;
     }
+    public float animationSpeed;
+    public float scalePower;
+    public float scaleMul;
 }
 
 
@@ -530,6 +539,46 @@ public class EventRestAPI : MonoBehaviour
         StartCoroutine(Lifecycle());
        
     }
+    bool savingDelaySetting=false;
+    IEnumerator saveWithDelay()
+    {
+        if (savingDelaySetting) yield break;
+        savingDelaySetting = true;
+        yield return new WaitForSeconds(3.0f);
+        saveSettings();
+        savingDelaySetting = false;
+    }
+    public void updatedCsvNum(float num)
+    {
+        settings.numberKeptAsCsv =(UInt32) Mathf.RoundToInt(num);
+        if (settings.numberKeptAsCsv < 10) settings.numberKeptAsCsv = 10;
+        StartCoroutine(saveWithDelay());
+    }
+    public void updatedSDTNum(float num)
+    {
+        settings.numberIntegrated = (UInt32)Mathf.RoundToInt(num);
+        if (settings.numberIntegrated < 1) settings.numberIntegrated = 1;
+        StartCoroutine(saveWithDelay());
+    }
+    public void updatedScalePower(float num)
+    {
+        settings.scalePower = num;
+        StartCoroutine(saveWithDelay());
+    }
+
+    public void updatedAnim(float num)
+    {
+        settings.animationSpeed = num;
+        if (settings.animationSpeed < 0.05f) settings.animationSpeed = 0.05f;
+        StartCoroutine(saveWithDelay());
+    }
+
+    public void updatedScaleMul(float num)
+    {
+        settings.scaleMul = num;
+        StartCoroutine(saveWithDelay());
+    }
+
     void saveSettings()
     {
         if (settings == null) return;
