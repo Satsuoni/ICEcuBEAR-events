@@ -71,6 +71,15 @@ namespace GoogleARCore.Examples.HelloAR
         /// <summary>
         /// The Unity Update() method.
         /// </summary>
+        List<GameObject> instObjects = new List<GameObject>();
+        public void clearObjects()
+        {
+            foreach(GameObject obj in instObjects)
+            {
+                Destroy(obj);
+            }
+            instObjects.Clear();
+        }
         public void Update()
         {
             _UpdateApplicationLifecycle();
@@ -126,7 +135,13 @@ namespace GoogleARCore.Examples.HelloAR
                     // Create an anchor to allow ARCore to track the hitpoint as understanding of
                     // the physical world evolves.
                     var anchor = hit.Trackable.CreateAnchor(hit.Pose);
-
+                    instObjects.Add(andyObject);
+                    while(instObjects.Count>3)
+                    {
+                        var obj = instObjects[0];
+                        instObjects.RemoveAt(0);
+                        Destroy(obj);
+                    }
                     // Make Andy model a child of the anchor.
                     andyObject.transform.parent = anchor.transform;
                 }
