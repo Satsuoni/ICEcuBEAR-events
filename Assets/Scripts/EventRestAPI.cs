@@ -1036,6 +1036,7 @@ public class EventRestAPI : MonoBehaviour
         {
             yield break;
         }
+        Debug.LogFormat("Have loaded evets: {0}",nevents);
         int oldEventNum = settings.eventData.Count;
         if (nevents == settings.eventData.Count)
         {
@@ -1058,6 +1059,7 @@ public class EventRestAPI : MonoBehaviour
         {
             yield break;
         }
+        Debug.LogFormat("Have loaded last events: {0} of {1}", lastEventList.Count,delta);
         if (lastEventList.Count != delta)
         {
             Debug.Log(string.Format("Got wrong number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
@@ -1081,6 +1083,7 @@ public class EventRestAPI : MonoBehaviour
         //inclusive
         gotLastBefore = false;
         lastEventList = new List<eventDesc>();
+       // Debug.LogFormat("Getting last event before {0}/{1}/{2}/{3}", lastEventsBefore, delta, runId, evd);
         string url = String.Format("{0}/{1}/{2}/{3}/{4}", mainURL, lastEventsBefore, delta, runId, evd);
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
@@ -1089,7 +1092,7 @@ public class EventRestAPI : MonoBehaviour
             yield return webRequest.SendWebRequest();
             if (webRequest.isNetworkError)
             {
-                gotLastEvents = false;
+                gotLastBefore = false;
                 Debug.Log("Error getting  " + url + " :" + webRequest.error);
                 yield break;
             }
@@ -1103,12 +1106,12 @@ public class EventRestAPI : MonoBehaviour
                 catch (System.Exception e)
                 {
                     Debug.Log(e);
-                    gotLastEvents = false;
+                    gotLastBefore = false;
                     yield break;
                 }
                 if (el["events"] == null)
                 {
-                    gotLastEvents = false;
+                    gotLastBefore = false;
                     yield break;
                 }
                 try
@@ -1121,13 +1124,13 @@ public class EventRestAPI : MonoBehaviour
                             lastEventList.Add(ed);
                         }
                     }
-
-                    gotLastEvents = true;
+                    Debug.LogFormat("Got events... {0} {1}", el["events"].Count,lastEventList.Count);
+                    gotLastBefore = true;
                 }
                 catch (Exception e)
                 {
                     Debug.Log(e);
-                    gotLastEvents = false;
+                    gotLastBefore = false;
 
                 }
 
@@ -1286,7 +1289,7 @@ public class EventRestAPI : MonoBehaviour
         }
         //3. Scan folder for files not mentioned in saved data. Remove them.
         HashSet<string> mentioned = new HashSet<string>();
-        Debug.Log(settings.eventData.Count);
+        Debug.LogFormat("Cur events in settings {0}",settings.eventData.Count);
         foreach (SavedEventData evd in settings.eventData)
         {
             if (evd.csvName != null) mentioned.Add(evd.csvName);
@@ -1341,12 +1344,14 @@ public class EventRestAPI : MonoBehaviour
         yield return StartCoroutine(GetLastEvents(1));
         if (gotLastEvents && lastEventList.Count >= 1)
         {
+            Debug.Log("running full update");
             long page = 10;
             HashSet<evId> updCheck = new HashSet<evId>();
             bool left = true;
             while (left)
             {
                 left = false;
+                if (lastEventList.Count == 0) break;
                 lastEventList.Sort((x, y) => { return x.Compare(y); });
                 bool upd = false;
                 foreach (eventDesc ev in lastEventList)
@@ -1379,6 +1384,7 @@ public class EventRestAPI : MonoBehaviour
                 }
                 eventDesc curLastEv = lastEventList[0];
                 yield return StartCoroutine(GetLastEventsBefore(page, curLastEv.run, curLastEv.evn));
+                Debug.LogFormat("Got last before {0} {1}",gotLastBefore,lastEventList.Count);
                 if (!gotLastBefore) left = false;
             }
             pruneFiles();
