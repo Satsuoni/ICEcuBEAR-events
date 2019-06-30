@@ -285,6 +285,7 @@ public class DOMController : MonoBehaviour
     public void updateForce()
     {
         KeyValuePair<float, float> rng = getDefaultRange();
+        Debug.LogFormat("Got range {0} {1}",rng.Key,rng.Value);
         timeSpan.SetValueWithoutNotify(rng.Key);
         timeSpan.SetValue2WithoutNotify(rng.Value);
        
