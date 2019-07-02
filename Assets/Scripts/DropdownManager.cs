@@ -59,7 +59,7 @@ public class DropdownManager : MonoBehaviour
             Dropdown.OptionData dopt = new Dropdown.OptionData();
             //Debug.Log("Nyanya"+JsonUtility.ToJson(edat.description));
             dopt.image = null;
-            dopt.text = string.Format("Ev. {0}/{1} : {2} ({3}), {4}KJ Status:{5}",edat.description.run,edat.description.evn,edat.description.baseDesc,edat.description.eventDate,edat.description.energy,edat.status);
+            dopt.text = string.Format("Ev. {0}/{1} : {2} ({3}), {4}GeV",edat.description.run,edat.description.evn,edat.description.baseDesc,edat.description.eventDate,edat.description.energy);
             lst.Add(dopt);
             curOptions.Add(edat.description);
         }
