@@ -76,6 +76,10 @@ public class eventDesc
                 energy = arr[3];
                 eventDate = arr[4];
             }
+            if (arr.Count > 5)
+            {
+                humName = arr[5];
+            }
         }
         catch(Exception )
         {
@@ -372,6 +376,7 @@ public class SavedEventData
     public string csvHash; //hash of csv file 
     public int integrationSteps;
     public string status;// maybe enum is better but a hassle
+    public string comment;
     public bool Corrupt()
     {
     
@@ -425,6 +430,41 @@ public class SavedEventsSettings
     public float animationSpeed=0.1f;
     public float scalePower=0.15f;
     public float scaleMul=5.0f;
+    public void deleteCache()
+    {
+        string pth = Application.persistentDataPath+"/";
+        if (eventData == null) return;
+        foreach(SavedEventData sd in eventData)
+        {
+           if(sd.csvName!=null)
+            {
+                try
+                {
+                    File.Delete(pth + sd.csvName);
+                    sd.csvName = null;
+                    sd.csvHash = null;
+                }
+                catch
+                {
+
+                }
+            }
+            if (sd.hashname != null)
+            {
+                try
+                {
+                    File.Delete(pth + sd.hashname);
+                    sd.hashname = null;
+                }
+                catch
+                {
+
+                }
+            }
+        }
+        //if they are deleted, no point in displaying them?
+        eventData.Clear();
+    }
 }
 
 
@@ -508,6 +548,13 @@ public class EventRestAPI : MonoBehaviour
     void OnDestroy()
     {
         _Instance = null;
+    }
+    public void deleteEventsData()
+    {
+        settings.deleteCache();
+        savedIndex.Clear();
+        saveSettings();
+        Utilz.UpdateEventList();
     }
     void Start()
     {
@@ -717,7 +764,13 @@ public class EventRestAPI : MonoBehaviour
     public static string lastEvents = "lastevents";
     public static string lastEventsBefore = "lasteventsbeforeid";
     public static string efile = "eventfile";
+    public static string commentsUrl = "comment";
 
+    string _curComment=null;
+    public string currentComment
+    {
+        get { return _curComment; }
+    }
     fullEventData _currentEvent =null;
     public fullEventData currentEvent
     {
@@ -850,7 +903,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
             webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
+           if (webRequest.isNetworkError|| webRequest.isHttpError)
             {
 
                 Debug.Log("Error getting  " + url + " :" + webRequest.error);
@@ -927,7 +980,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
             webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
+            if (webRequest.isNetworkError || webRequest.isHttpError)
             {
                 gotEventNumber = false;
                 Debug.Log("Error getting  " + url + " :" + webRequest.error + " --> " + webRequest.responseCode.ToString() + webRequest.downloadHandler.text);
@@ -976,7 +1029,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
             webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
+            if (webRequest.isNetworkError || webRequest.isHttpError)
             {
                 gotLastEvents = false;
                 Debug.Log("Error getting  " + url + " :" + webRequest.error);
@@ -1075,7 +1128,7 @@ public class EventRestAPI : MonoBehaviour
         if (oldCount != settings.eventData.Count)
             Utilz.UpdateEventList();
         Debug.Log(string.Format("Done updating, cur events {0}", settings.eventData.Count));
-      
+        StartCoroutine(updateComments());
     }
     bool gotLastBefore = false;
     IEnumerator GetLastEventsBefore(Int64 delta, Int64 runId, Int64 evd)
@@ -1090,7 +1143,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
             webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError)
+            if (webRequest.isNetworkError || webRequest.isHttpError)
             {
                 gotLastBefore = false;
                 Debug.Log("Error getting  " + url + " :" + webRequest.error);
@@ -1337,6 +1390,72 @@ public class EventRestAPI : MonoBehaviour
             StartCoroutine(runFullUpdate());
         }
     }
+    string comment = null;
+    bool gotComment = false;
+    IEnumerator getComment(evId evid)
+    {
+        gotComment = false;
+        string url = String.Format("{0}/{1}/{2}/{3}", mainURL, commentsUrl,evid.Key,evid.Value);
+        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+        {
+            // Request and wait for the desired page.
+            webRequest.chunkedTransfer = false;
+            yield return webRequest.SendWebRequest();
+            if (webRequest.isNetworkError || webRequest.isHttpError)
+            {
+                Debug.Log("Error getting  " + url + " :" + webRequest.error + " --> " + webRequest.responseCode.ToString() + webRequest.downloadHandler.text);
+                yield break;
+            }
+            else
+            {
+                JSONNode el = null;
+                try
+                {
+                    el = JSON.Parse(webRequest.downloadHandler.text);
+                }
+                catch (System.Exception e)
+                {
+                    Debug.Log(e);
+                    gotComment = false;
+                    yield break;
+                }
+                
+                if (el["comment"] == null)
+                {
+                    gotComment = true;
+                    comment = null;
+                    yield break;
+                }
+                try
+                {
+
+                    gotComment = true;
+                    comment = el["comment"];
+                }
+                catch (Exception e)
+                {
+                    Debug.Log(e);
+                    gotComment = false;
+                }
+
+            }
+        }
+    }
+    public IEnumerator updateComments()
+    {
+        bool upd = false;
+        foreach(SavedEventData dat in settings.eventData)
+        {
+            evId evid = new evId(dat.description.run,dat.description.evn);
+            yield return StartCoroutine(getComment(evid));
+            if(comment!=null)
+            {
+                dat.comment = comment;
+                upd = true;
+            }
+        }
+        if (upd) saveSettings();
+    }
     public IEnumerator runFullUpdate()
     {
         gotLastEvents = false;
@@ -1376,6 +1495,14 @@ public class EventRestAPI : MonoBehaviour
                         savedIndex[eid] = dat;
                         upd = true;
                     }
+                    else
+                    {
+                        if(ev.humName!=null&&savedIndex[eid].description.humName==null)
+                        {
+                            savedIndex[eid].description.humName = ev.humName;
+                            upd = true;
+                        }
+                    }
                 }
                 if(upd)
                 {
@@ -1393,6 +1520,7 @@ public class EventRestAPI : MonoBehaviour
         }
         if (oldCount != settings.eventData.Count)
             Utilz.UpdateEventList();
+        StartCoroutine(updateComments());
     }
 
     void assignExpected()
@@ -1401,6 +1529,7 @@ public class EventRestAPI : MonoBehaviour
         if (expectedNextEvent.Key == -1) return;
         if (!cache.checkCache(expectedNextEvent)) return;
         fullEventData dat = cache.getItem(expectedNextEvent);
+
         if (dat == null) return;
         Debug.Log("Got cached");
         if (dat.description==null)
@@ -1411,6 +1540,11 @@ public class EventRestAPI : MonoBehaviour
         if(_currentEvent==null)
         {
             _currentEvent = dat;
+            SavedEventData edat;
+            if(savedIndex.TryGetValue(expectedNextEvent,out edat))
+            {
+                _curComment = edat.comment;
+            }
             Utilz.UpdateCurEvent();
             return;
         }
