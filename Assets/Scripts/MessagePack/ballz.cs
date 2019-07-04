@@ -91,7 +91,7 @@ namespace MessagePack.Formatters
 {
     using System;
     using MessagePack;
-
+    using UnityEngine;
 
     public sealed class ballIntegratedDataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::ballIntegratedData>
     {
@@ -274,11 +274,13 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 4);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 6);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventName, formatterResolver);
             offset += formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::ballIntegratedData>>().Serialize(ref bytes, offset, value.ballData, formatterResolver);
             offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.isteps);
             offset += formatterResolver.GetFormatterWithVerify<global::eventDesc>().Serialize(ref bytes, offset, value.description, formatterResolver);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.minPureTime);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.maxPureTime);
             return offset - startOffset;
         }
 
@@ -298,6 +300,8 @@ namespace MessagePack.Formatters
             var __ballData__ = default(global::System.Collections.Generic.List<global::ballIntegratedData>);
             var __isteps__ = default(int);
             var __description__ = default(global::eventDesc);
+            var __minPureTime__ = default(float);
+            var __maxPureTime__ = default(float);
 
             for (int i = 0; i < length; i++)
             {
@@ -317,6 +321,12 @@ namespace MessagePack.Formatters
                     case 3:
                         __description__ = formatterResolver.GetFormatterWithVerify<global::eventDesc>().Deserialize(bytes, offset, formatterResolver, out readSize);
                         break;
+                    case 4:
+                        __minPureTime__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 5:
+                        __maxPureTime__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
                         break;
@@ -331,6 +341,8 @@ namespace MessagePack.Formatters
             ____result.ballData = __ballData__;
             ____result.isteps = __isteps__;
             ____result.description = __description__;
+            ____result.minPureTime = __minPureTime__;
+            ____result.maxPureTime = __maxPureTime__;
             return ____result;
         }
     }
@@ -352,6 +364,7 @@ namespace MessagePack.Formatters
                 { "csvHash", 3},
                 { "integrationSteps", 4},
                 { "status", 5},
+                { "comment", 6},
             };
 
             this.____stringByteKeys = new byte[][]
@@ -362,6 +375,7 @@ namespace MessagePack.Formatters
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("csvHash"),
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("integrationSteps"),
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("status"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("comment"),
                 
             };
         }
@@ -375,7 +389,7 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 6);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 7);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[0]);
             offset += formatterResolver.GetFormatterWithVerify<global::eventDesc>().Serialize(ref bytes, offset, value.description, formatterResolver);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[1]);
@@ -388,6 +402,8 @@ namespace MessagePack.Formatters
             offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.integrationSteps);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[5]);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.status, formatterResolver);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[6]);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.comment, formatterResolver);
             return offset - startOffset;
         }
 
@@ -409,6 +425,7 @@ namespace MessagePack.Formatters
             var __csvHash__ = default(string);
             var __integrationSteps__ = default(int);
             var __status__ = default(string);
+            var __comment__ = default(string);
 
             for (int i = 0; i < length; i++)
             {
@@ -441,6 +458,9 @@ namespace MessagePack.Formatters
                     case 5:
                         __status__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
                         break;
+                    case 6:
+                        __comment__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
                         break;
@@ -459,6 +479,7 @@ namespace MessagePack.Formatters
             ____result.csvHash = __csvHash__;
             ____result.integrationSteps = __integrationSteps__;
             ____result.status = __status__;
+            ____result.comment = __comment__;
             return ____result;
         }
     }
@@ -477,6 +498,9 @@ namespace MessagePack.Formatters
                 { "numberIntegrated", 0},
                 { "numberKeptAsCsv", 1},
                 { "eventData", 2},
+                { "animationSpeed", 3},
+                { "scalePower", 4},
+                { "scaleMul", 5},
             };
 
             this.____stringByteKeys = new byte[][]
@@ -484,6 +508,9 @@ namespace MessagePack.Formatters
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("numberIntegrated"),
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("numberKeptAsCsv"),
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("eventData"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("animationSpeed"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("scalePower"),
+                global::MessagePack.MessagePackBinary.GetEncodedStringBytes("scaleMul"),
                 
             };
         }
@@ -497,13 +524,19 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 3);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 6);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[0]);
             offset += MessagePackBinary.WriteUInt32(ref bytes, offset, value.numberIntegrated);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[1]);
             offset += MessagePackBinary.WriteUInt32(ref bytes, offset, value.numberKeptAsCsv);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[2]);
             offset += formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::SavedEventData>>().Serialize(ref bytes, offset, value.eventData, formatterResolver);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[3]);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.animationSpeed);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[4]);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.scalePower);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[5]);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.scaleMul);
             return offset - startOffset;
         }
 
@@ -522,6 +555,9 @@ namespace MessagePack.Formatters
             var __numberIntegrated__ = default(uint);
             var __numberKeptAsCsv__ = default(uint);
             var __eventData__ = default(global::System.Collections.Generic.List<global::SavedEventData>);
+            var __animationSpeed__ = default(float);
+            var __scalePower__ = default(float);
+            var __scaleMul__ = default(float);
 
             for (int i = 0; i < length; i++)
             {
@@ -544,6 +580,17 @@ namespace MessagePack.Formatters
                         break;
                     case 2:
                         __eventData__ = formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::SavedEventData>>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        Debug.Log(__eventData__.Count);
+
+                        break;
+                    case 3:
+                        __animationSpeed__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 4:
+                        __scalePower__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 5:
+                        __scaleMul__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
                         break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
@@ -560,6 +607,9 @@ namespace MessagePack.Formatters
             ____result.numberIntegrated = __numberIntegrated__;
             ____result.numberKeptAsCsv = __numberKeptAsCsv__;
             ____result.eventData = __eventData__;
+            ____result.animationSpeed = __animationSpeed__;
+            ____result.scalePower = __scalePower__;
+            ____result.scaleMul = __scaleMul__;
             return ____result;
         }
     }

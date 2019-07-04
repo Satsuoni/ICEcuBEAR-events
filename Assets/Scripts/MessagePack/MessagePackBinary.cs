@@ -128,6 +128,8 @@ namespace MessagePack
             singleDecoders[MessagePackCode.UInt16] = Decoders.UInt16Single.Instance;
             singleDecoders[MessagePackCode.UInt32] = Decoders.UInt32Single.Instance;
             singleDecoders[MessagePackCode.UInt64] = Decoders.UInt64Single.Instance;
+            singleDecoders[MessagePackCode.Float64] = Decoders.Float64Single.Instance;
+
 
             doubleDecoders[MessagePackCode.Float32] = Decoders.Float32Double.Instance;
             doubleDecoders[MessagePackCode.Float64] = Decoders.Float64Double.Instance;
@@ -4248,7 +4250,21 @@ namespace MessagePack.Decoders
             return new Float64Bits(bytes, offset + 1).Value;
         }
     }
+    internal sealed class Float64Single : ISingleDecoder
+    {
+        internal static readonly ISingleDecoder Instance = new Float64Single();
 
+        Float64Single()
+        {
+
+        }
+
+        public Single Read(byte[] bytes, int offset, out int readSize)
+        {
+            readSize = 9;
+            return (Single)new Float64Bits(bytes, offset + 1).Value;
+        }
+    }
     internal sealed class InvalidDouble : IDoubleDecoder
     {
         internal static readonly IDoubleDecoder Instance = new InvalidDouble();

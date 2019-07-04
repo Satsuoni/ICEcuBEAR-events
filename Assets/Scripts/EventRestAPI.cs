@@ -1396,6 +1396,7 @@ public class EventRestAPI : MonoBehaviour
     {
         gotComment = false;
         string url = String.Format("{0}/{1}/{2}/{3}", mainURL, commentsUrl,evid.Key,evid.Value);
+        //Debug.LogFormat("Comment {0}/{1}/{2}/{3} ", mainURL, commentsUrl, evid.Key, evid.Value);
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
             // Request and wait for the desired page.
@@ -1412,6 +1413,7 @@ public class EventRestAPI : MonoBehaviour
                 try
                 {
                     el = JSON.Parse(webRequest.downloadHandler.text);
+                    
                 }
                 catch (System.Exception e)
                 {
@@ -1431,6 +1433,7 @@ public class EventRestAPI : MonoBehaviour
 
                     gotComment = true;
                     comment = el["comment"];
+                    Debug.LogFormat("Comments {0} ", comment);
                 }
                 catch (Exception e)
                 {
@@ -1448,9 +1451,9 @@ public class EventRestAPI : MonoBehaviour
         {
             evId evid = new evId(dat.description.run,dat.description.evn);
             yield return StartCoroutine(getComment(evid));
-            if(comment!=null)
+            if(gotComment==true&& comment!=null)
             {
-                dat.comment = comment;
+                dat.comment = (string)comment.Clone();
                 upd = true;
             }
         }
@@ -1544,6 +1547,7 @@ public class EventRestAPI : MonoBehaviour
             if(savedIndex.TryGetValue(expectedNextEvent,out edat))
             {
                 _curComment = edat.comment;
+                Debug.LogFormat("edc {0}", edat.comment);
             }
             Utilz.UpdateCurEvent();
             return;
