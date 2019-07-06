@@ -65,9 +65,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.35"
-     inkscape:cx="510.27456"
-     inkscape:cy="382.73258"
+     inkscape:zoom="2.8"
+     inkscape:cx="511.13497"
+     inkscape:cy="597.45477"
      inkscape:document-units="mm"
      inkscape:current-layer="g889-2-5"
      showgrid="false"
@@ -181,7 +181,9 @@
       <g
          transform="translate(-344.51042,-5.6126641)"
          id="g1674-4"
-         style="filter:url(#filter1460)">
+         style="filter:url(#filter1460)"
+         inkscape:export-xdpi="148.96498"
+         inkscape:export-ydpi="148.96498">
         <path
            style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#f6f6f6;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
            d="M 104.99974,104.65461 A 43.845233,43.845233 0 0 0 61.154867,148.5 43.845233,43.845233 0 0 0 104.99974,192.34539 43.845233,43.845233 0 0 0 148.84513,148.5 43.845233,43.845233 0 0 0 104.99974,104.65461 Z m 0,4.81108 A 39.034386,39.034386 0 0 1 144.03456,148.5 39.034386,39.034386 0 0 1 104.99974,187.53431 39.034386,39.034386 0 0 1 65.965426,148.5 39.034386,39.034386 0 0 1 104.99974,109.46569 Z"
@@ -210,7 +212,9 @@
       </g>
       <g
          id="g1784"
-         style="filter:url(#filter1460)">
+         style="filter:url(#filter1460)"
+         inkscape:export-xdpi="148.96498"
+         inkscape:export-ydpi="148.96498">
         <rect
            ry="30.736006"
            y="-235.47061"
@@ -235,7 +239,9 @@
       </g>
       <g
          id="g1789"
-         style="filter:url(#filter1460)">
+         style="filter:url(#filter1460)"
+         inkscape:export-xdpi="148.96498"
+         inkscape:export-ydpi="148.96498">
         <text
            id="text1539-5"
            y="-92.656097"
@@ -258,7 +264,9 @@
       </g>
       <g
          id="g1796"
-         style="filter:url(#filter1460)">
+         style="filter:url(#filter1460)"
+         inkscape:export-xdpi="148.96498"
+         inkscape:export-ydpi="148.96498">
         <text
            id="text1543-4"
            y="8.1897869"
@@ -291,7 +299,9 @@
       </g>
       <g
          id="g1803"
-         style="filter:url(#filter1460)">
+         style="filter:url(#filter1460)"
+         inkscape:export-xdpi="148.96498"
+         inkscape:export-ydpi="148.96498">
         <text
            id="text1547-4"
            y="131.15337"
@@ -324,7 +334,9 @@
       </g>
       <g
          id="g1810"
-         style="filter:url(#filter1460)">
+         style="filter:url(#filter1460)"
+         inkscape:export-xdpi="148.96498"
+         inkscape:export-ydpi="148.96498">
         <text
            id="text1551-6"
            y="231.64671"
@@ -355,6 +367,12 @@
            id="rect1466-6-8"
            style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#ffffff;stroke-width:5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate" />
       </g>
+      <path
+         style="fill:#ffffff;fill-rule:evenodd;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;fill-opacity:1;filter:url(#filter1460)"
+         d="m -48.052613,-66.385825 20.033646,-74.085025 20.0336468,74.085025 z"
+         id="path1902"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="cccc" />
     </g>
   </g>
 </svg>
