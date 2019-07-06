@@ -13,6 +13,7 @@ public class SettingsController : MonoBehaviour
     public Slider mulVal;
     public GameObject settingsOverlay;
     public RectTransform settingsPanel;
+    Landscaped sizecontrol = null;
     public float animSpeed = 3f;
     bool ready = false;
     Vector2 presetMx, presetMn;
@@ -23,6 +24,7 @@ public class SettingsController : MonoBehaviour
         ready = false;
         presetMn = settingsPanel.anchorMin;
         presetMx = settingsPanel.anchorMax;
+        sizecontrol = settingsPanel.gameObject.GetComponent<Landscaped>();
 
         settingsPanel.anchorMin = new Vector2(presetMn.x,presetMn.y-presetMx.y);
         settingsPanel.anchorMax = new Vector2(presetMx.x,0);
@@ -87,6 +89,21 @@ public class SettingsController : MonoBehaviour
     }
     void setCP(float cp)
     {
+        if(sizecontrol!=null)
+        {
+            if (sizecontrol.isPortrait)
+            {
+                presetMn = new Vector2(sizecontrol.portraitAnchor.x, sizecontrol.portraitAnchor.y);
+                presetMx= new Vector2(sizecontrol.portraitAnchor.z, sizecontrol.portraitAnchor.w);
+
+            }
+            else
+            {
+                presetMn = new Vector2(sizecontrol.landscapeAnchor.x, sizecontrol.landscapeAnchor.y);
+                presetMx = new Vector2(sizecontrol.landscapeAnchor.z, sizecontrol.landscapeAnchor.w);
+
+            }
+        }
         if(cp==1.0f)
         {
             settingsPanel.anchorMin = presetMn;
