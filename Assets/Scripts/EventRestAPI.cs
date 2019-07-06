@@ -423,13 +423,13 @@ public class SavedEventsSettings
         if (animationSpeed > 1f) animationSpeed = 0.2f;
         if (scalePower < 0.04f) scalePower = 0.15f;
         if (scalePower > 0.3f) scalePower = 0.15f;
-        if (scaleMul < 1) scaleMul = 5f;
+        if (scaleMul < 1) scaleMul = 2f;
         if (scaleMul > 20) scaleMul = 5f;
         return true;
     }
     public float animationSpeed=0.1f;
     public float scalePower=0.15f;
-    public float scaleMul=5.0f;
+    public float scaleMul=2.0f;
     public void deleteCache()
     {
         string pth = Application.persistentDataPath+"/";

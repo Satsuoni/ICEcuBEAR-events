@@ -50,7 +50,7 @@ public class TimeSlider : MonoBehaviour
             playValue += dv;
             if(playValue>=upperLimit||upperLimit-lowerLimit<=0)
             {
-                playValue = lowerLimit;
+                //playValue = lowerLimit;
 
                 Pause();
             }
