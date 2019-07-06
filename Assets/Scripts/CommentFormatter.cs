@@ -37,6 +37,7 @@ public class CommentFormatter : MonoBehaviour
             }
 
         }
+      
         if(commentField!=null)
         {
             commentField.text = comment;
