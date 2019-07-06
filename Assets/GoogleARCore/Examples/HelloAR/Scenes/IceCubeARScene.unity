@@ -533,6 +533,7 @@ GameObject:
   - component: {fileID: 126477624}
   - component: {fileID: 126477625}
   - component: {fileID: 126477626}
+  - component: {fileID: 126477627}
   m_Layer: 5
   m_Name: timeSpan
   m_TagString: Untagged
@@ -640,6 +641,18 @@ MonoBehaviour:
   portraitOffset: {x: 0, y: 0, z: 0, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
+--- !u!114 &126477627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 126477623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 782453689bd183841a223cc9a2cc827f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &141907645
 GameObject:
   m_ObjectHideFlags: 0
@@ -952,9 +965,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isPortrait: 1
   landscapeAnchor: {x: 0.032592595, y: 0.35, z: 0.067, w: 0.55}
-  portraitAnchor: {x: 0.032592595, y: 0.34185806, z: 0.10138889, w: 0.46471608}
-  landscapeOffset: {x: -46.219997, y: 0, z: 46.219997, w: 0}
-  portraitOffset: {x: 328.2053, y: 0, z: -328.2053, w: 0}
+  portraitAnchor: {x: 0.032592595, y: 0.32, z: 0.10138889, w: 0.47}
+  landscapeOffset: {x: -155.99248, y: 0, z: 155.99248, w: 0}
+  portraitOffset: {x: 11.214812, y: 0, z: -11.214812, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &198716345
@@ -1072,7 +1085,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.19216667, y: 0.62928706}
   m_AnchorMax: {x: 0.8, y: 0.93743527}
-  m_AnchoredPosition: {x: 0, y: 0.00012207031}
+  m_AnchoredPosition: {x: 0, y: -0.00012207031}
   m_SizeDelta: {x: 0, y: 5913.5723}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &219201399
@@ -1090,7 +1103,7 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0.07651852, y: 0.1, z: 0.45000002, w: 0.9}
   portraitAnchor: {x: 0.19216667, y: 0.62928706, z: 0.8, w: 0.93743527}
-  landscapeOffset: {x: 0, y: 28.63997, z: 0, w: -28.63997}
+  landscapeOffset: {x: 0, y: 28.640015, z: 0, w: -28.63977}
   portraitOffset: {x: 0, y: -2956.7861, z: 0, w: 2956.7861}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
@@ -1536,7 +1549,7 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0.87638897, y: 0.74270374, z: 0.96161115, w: 0.93388903}
   portraitAnchor: {x: 0.8185185, y: 0.8973797, z: 0.95748156, w: 0.97}
-  landscapeOffset: {x: 0, y: 11.200082, z: 0, w: -11.200082}
+  landscapeOffset: {x: 0, y: 11.200073, z: 0, w: -11.200073}
   portraitOffset: {x: 0, y: -668.9069, z: 0, w: 668.9069}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
@@ -2828,8 +2841,8 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0.9578518, y: 0, z: 1.0040001, w: 0.08400001}
   portraitAnchor: {x: 0.92, y: -0.002, z: 1.0040001, w: 0.03770371}
-  landscapeOffset: {x: 0, y: 65.799965, z: 0, w: -65.799965}
-  portraitOffset: {x: -60, y: -448.00266, z: 0, w: 448.00266}
+  landscapeOffset: {x: 0, y: 222.0748, z: 0, w: -222.0748}
+  portraitOffset: {x: -60, y: -47.351143, z: 0, w: 47.351143}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &566398518
@@ -4678,8 +4691,8 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0.90324074, y: 0.82755554, z: 0.9677593, w: 0.9638519}
   portraitAnchor: {x: 0.814, y: 0.90400004, z: 0.93200004, w: 0.9638519}
-  landscapeOffset: {x: -112.36005, y: 0, z: 112.36005, w: 0}
-  portraitOffset: {x: 573.90814, y: 0, z: -573.90814, w: 0}
+  landscapeOffset: {x: -379.2152, y: 0, z: 379.2152, w: 0}
+  portraitOffset: {x: 23.395554, y: 0, z: -23.395554, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &1003824538
@@ -5513,8 +5526,8 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0, y: 0.22677778, z: 0.25, w: 0.39644444}
   portraitAnchor: {x: 0.1, y: 0.33, z: 0.43, w: 0.44}
-  landscapeOffset: {x: 32.026184, y: 0, z: -32.026184, w: 0}
-  portraitOffset: {x: 1219.4613, y: 0, z: -1219.4613, w: 0}
+  landscapeOffset: {x: 32.026123, y: 0, z: -32.026123, w: 0}
+  portraitOffset: {x: 1219.4612, y: 0, z: -1219.4612, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!114 &1284029638
@@ -5782,7 +5795,7 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0.35, y: 0.059592593, z: 0.65, w: 0.22677778}
   portraitAnchor: {x: 0.35, y: 0.0919, z: 0.65, w: 0.2}
-  landscapeOffset: {x: 89.50671, y: 0, z: -89.50671, w: 0}
+  landscapeOffset: {x: 89.506714, y: 0, z: -89.506714, w: 0}
   portraitOffset: {x: 1040.0541, y: 0, z: -1040.0541, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
@@ -7476,8 +7489,8 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0.8966112, y: 0.314, z: 0.94577783, w: 0.5154321}
   portraitAnchor: {x: 0.896, y: 0.34185806, z: 0.96761113, w: 0.46471608}
-  landscapeOffset: {x: -38.714024, y: 0, z: 38.714024, w: 0}
-  portraitOffset: {x: 346.54718, y: 0, z: -346.54718, w: 0}
+  landscapeOffset: {x: -130.65982, y: 0, z: 130.65982, w: 0}
+  portraitOffset: {x: 14.069778, y: 0, z: -14.069778, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &1639889979
@@ -8327,7 +8340,7 @@ MonoBehaviour:
   isPortrait: 1
   landscapeAnchor: {x: 0.5, y: 0.22677778, z: 0.75, w: 0.39644444}
   portraitAnchor: {x: 0.1, y: 0.21, z: 0.43, w: 0.32}
-  landscapeOffset: {x: 32.026184, y: 0, z: -32.026184, w: 0}
+  landscapeOffset: {x: 32.026123, y: 0, z: -32.026123, w: 0}
   portraitOffset: {x: 1219.4612, y: 0, z: -1219.4612, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
@@ -8506,9 +8519,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isPortrait: 1
   landscapeAnchor: {x: 0.032592595, y: 0.75, z: 0.067, w: 0.95}
-  portraitAnchor: {x: 0.032592595, y: 0.818142, z: 0.10138889, w: 0.9534877}
-  landscapeOffset: {x: -46.21999, y: 0, z: 46.21999, w: 0}
-  portraitOffset: {x: 315.99945, y: 0, z: -315.99945, w: 0}
+  portraitAnchor: {x: 0.032592595, y: 0.8, z: 0.10138889, w: 0.95}
+  landscapeOffset: {x: -155.99245, y: 0, z: 155.99245, w: 0}
+  portraitOffset: {x: 11.214814, y: 0, z: -11.214814, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &1876774362
