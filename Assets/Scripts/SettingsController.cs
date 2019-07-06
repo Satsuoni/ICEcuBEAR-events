@@ -17,6 +17,8 @@ public class SettingsController : MonoBehaviour
     public float animSpeed = 3f;
     bool ready = false;
     Vector2 presetMx, presetMn;
+    Vector2 presetMxp, presetMnp;
+    Vector2 presetMxl, presetMnl;
     // Start is called before the first frame update
     void Start()
     {
@@ -25,7 +27,15 @@ public class SettingsController : MonoBehaviour
         presetMn = settingsPanel.anchorMin;
         presetMx = settingsPanel.anchorMax;
         sizecontrol = settingsPanel.gameObject.GetComponent<Landscaped>();
+        if(sizecontrol!=null)
+        {
+            presetMnp = new Vector2(sizecontrol.portraitAnchor.x, sizecontrol.portraitAnchor.y);
+            presetMxp = new Vector2(sizecontrol.portraitAnchor.z, sizecontrol.portraitAnchor.w);
 
+            presetMnl = new Vector2(sizecontrol.landscapeAnchor.x, sizecontrol.landscapeAnchor.y);
+            presetMxl = new Vector2(sizecontrol.landscapeAnchor.z, sizecontrol.landscapeAnchor.w);
+
+        }
         settingsPanel.anchorMin = new Vector2(presetMn.x,presetMn.y-presetMx.y);
         settingsPanel.anchorMax = new Vector2(presetMx.x,0);
 
@@ -93,14 +103,14 @@ public class SettingsController : MonoBehaviour
         {
             if (sizecontrol.isPortrait)
             {
-                presetMn = new Vector2(sizecontrol.portraitAnchor.x, sizecontrol.portraitAnchor.y);
-                presetMx= new Vector2(sizecontrol.portraitAnchor.z, sizecontrol.portraitAnchor.w);
+                presetMn = presetMnp;
+                presetMx = presetMxp;
 
             }
             else
             {
-                presetMn = new Vector2(sizecontrol.landscapeAnchor.x, sizecontrol.landscapeAnchor.y);
-                presetMx = new Vector2(sizecontrol.landscapeAnchor.z, sizecontrol.landscapeAnchor.w);
+                presetMn = presetMnl;
+                presetMx = presetMxl;
 
             }
         }
