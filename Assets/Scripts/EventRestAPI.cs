@@ -1433,7 +1433,7 @@ public class EventRestAPI : MonoBehaviour
 
                     gotComment = true;
                     comment = el["comment"];
-                    Debug.LogFormat("Comments {0} ", comment);
+                    //Debug.LogFormat("Comments {0} ", comment);
                 }
                 catch (Exception e)
                 {
@@ -1547,7 +1547,7 @@ public class EventRestAPI : MonoBehaviour
             if(savedIndex.TryGetValue(expectedNextEvent,out edat))
             {
                 _curComment = edat.comment;
-                Debug.LogFormat("edc {0}", edat.comment);
+                
             }
             Utilz.UpdateCurEvent();
             return;
@@ -1555,6 +1555,12 @@ public class EventRestAPI : MonoBehaviour
         if(_currentEvent.description.run!= dat.description.run|| _currentEvent.description.evn != dat.description.evn)
         {
             _currentEvent = dat;
+            SavedEventData edat;
+            if (savedIndex.TryGetValue(expectedNextEvent, out edat))
+            {
+                _curComment = edat.comment;
+
+            }
             Utilz.UpdateCurEvent();
             return;
         }

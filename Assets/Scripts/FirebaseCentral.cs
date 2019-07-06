@@ -37,7 +37,26 @@ public class FirebaseCentral : MonoBehaviour
 
       
     }
-
+    public void SubTest()
+    {
+        if(app!=null)
+        {
+            Firebase.Messaging.FirebaseMessaging.SubscribeAsync("/topics/ar_test").ContinueWith(res =>
+            {
+                Debug.LogFormat("Subbed to test: {0}",res);
+            });
+        }
+    }
+    public void UbsubTest()
+    {
+        if (app != null)
+        {
+            Firebase.Messaging.FirebaseMessaging.UnsubscribeAsync("/topics/ar_test").ContinueWith(res =>
+            {
+                Debug.LogFormat("Unsubbed from test: {0}", res);
+            });
+        }
+    }
     public void OnTokenReceived(object sender, Firebase.Messaging.TokenReceivedEventArgs token)
     {
         UnityEngine.Debug.Log("Received Registration Token: " + token.Token);
