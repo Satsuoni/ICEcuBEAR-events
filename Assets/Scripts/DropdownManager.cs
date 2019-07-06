@@ -21,7 +21,14 @@ public class DropdownManager : MonoBehaviour
         });
         //Dropdown.OptionData opt;
         //opt.image = null;
+        StartCoroutine(waitAndDefault());
 
+    }
+    IEnumerator waitAndDefault()
+    {
+        while (!EventRestAPI.isDropdownReady)
+            yield return null;
+        DropdownValueChanged(managed);
     }
     void Awake()
     {

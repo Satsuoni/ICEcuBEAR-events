@@ -9,13 +9,13 @@ public class AboutController : MonoBehaviour
     public RectTransform aboutPanel;
     Landscaped sizecontrol = null;
     public float animSpeed = 3f;
-    bool ready = false;
+  
     Vector2 presetMx, presetMn;
     // Start is called before the first frame update
     void Start()
     {
         aboutOverlay.SetActive(false);
-        ready = false;
+        
         presetMn = aboutPanel.anchorMin;
         presetMx = aboutPanel.anchorMax;
         sizecontrol = aboutPanel.gameObject.GetComponent<Landscaped>();

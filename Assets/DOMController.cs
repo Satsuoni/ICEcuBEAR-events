@@ -294,7 +294,7 @@ public class DOMController : MonoBehaviour
 
         updateToSet(true);
     }
-    public KeyValuePair<float, float> getDefaultRange()
+    public static KeyValuePair<float, float> getDefaultRange()
     {
         if(EventRestAPI.Instance==null)
         {
