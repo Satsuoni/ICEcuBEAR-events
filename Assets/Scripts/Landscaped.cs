@@ -50,7 +50,8 @@ public class Landscaped : MonoBehaviour
             return;
 
         }
-        if(portraitAnchor==inv4)
+        
+        if (portraitAnchor==inv4)
         {
             portraitAnchor = new Vector4(self.anchorMin.x, self.anchorMin.y, self.anchorMax.x, self.anchorMax.y);
             portraitOffset = new Vector4(self.offsetMin.x, self.offsetMin.y, self.offsetMax.x, self.offsetMax.y);
@@ -88,7 +89,12 @@ public class Landscaped : MonoBehaviour
                 self.pivot = landscapePivot;
             }
         }
+        if (gameObject.name=="Image")
+        {
+            Debug.LogFormat("Tmr* {0} {1} {2} {3}", Time.frameCount, Time.time, self.anchorMin,self.anchorMax);
+
+        }
     }
-    // Update is called once per frame
+
     
 }
