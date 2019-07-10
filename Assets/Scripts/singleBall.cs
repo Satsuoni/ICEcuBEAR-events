@@ -19,6 +19,22 @@ public class singleBall : MonoBehaviour
         props.SetColor("_color", new Color(r, g, b));
         rnd.SetPropertyBlock(props);*/
     }
+    float _sig = -1;
+    public void resetSig()
+    {
+        _sig = -1;
+    }
+    public float setAndCompareSig(float sig)
+    {
+        if (_sig > 0) return 0;//for now, only react on first hit... 
+        if(sig!=_sig)
+        {
+            _sig = sig;
+            return sig;
+
+        }
+        return 0;
+    }
     public void setScale(float scale)
     {
         if (props == null) props = new MaterialPropertyBlock();

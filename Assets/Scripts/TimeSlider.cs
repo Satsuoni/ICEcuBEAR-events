@@ -1,11 +1,12 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class TimeSlider : MonoBehaviour
 {
-   // public static float playbackSpeed = 0.1f;
+    // public static float playbackSpeed = 0.1f;
     Slider main;
     public Button playButton;
     bool isPlaying = false;
@@ -13,6 +14,14 @@ public class TimeSlider : MonoBehaviour
     public Sprite pause;
     public Toggle lockToggle;
     public RangeSlider timeVl;
+    public bool IsPlaying
+        {
+        get { return isPlaying;  }
+        }
+    public UnityEvent OnStartPlaying;
+    public UnityEvent OnStopPlaying;
+
+
     float upperLimit
     {
         get
@@ -60,6 +69,7 @@ public class TimeSlider : MonoBehaviour
     void Pause()
     {
         if (!isPlaying) return;
+        OnStopPlaying?.Invoke();
         playButton.GetComponent<Image>().sprite = play;
         isPlaying = false;
 
@@ -67,12 +77,21 @@ public class TimeSlider : MonoBehaviour
     void Play()
     {
         if (isPlaying) return;
+        OnStartPlaying?.Invoke();
         if (lockToggle.isOn)
         {
             if (main.value < lowerLimit) main.value = lowerLimit;
             if (main.value > upperLimit) main.value = upperLimit;
-
+            if(main.value==upperLimit)
+            {
+                main.value = lowerLimit;
+            }
         }
+        else
+        {
+            if (main.value >= main.maxValue) main.value = main.minValue;
+        }
+
         playValue = main.value;
         playButton.GetComponent<Image>().sprite = pause;
         isPlaying = true;
