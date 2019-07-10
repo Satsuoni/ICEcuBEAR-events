@@ -8,6 +8,8 @@ using System.IO;
 using MessagePack.Resolvers;
 using System.Text;
 using System.Security.Cryptography;
+using AudioSynthesis.Bank;
+using AudioSynthesis.Bank.Patches;
 
 [Serializable]
 public class singleBallList
@@ -156,23 +158,35 @@ public class DOMController : MonoBehaviour
     RangeSlider timeSpan;
     Slider deltaController;
     Slider timeController;
+    TimeSlider playbackController;
     Slider zoomControl;
     const int timeSpans = 2500;
     public Transform footPoint;
     public Transform footAlign;
     List<eventData> curEvent = new List<eventData>();
+    [SerializeField] TextAssetStream bankSource;
     [SerializeField]
     public singleBallList[] ballArray = null;//new int[5][];  
-   // Dictionary<int, Dictionary<int, ballIntegratedData>> affBalls = new Dictionary<int, Dictionary<int, ballIntegratedData>>();
+    [SerializeField]
+    public SingleString[] stringArray = null;
+    // Dictionary<int, Dictionary<int, ballIntegratedData>> affBalls = new Dictionary<int, Dictionary<int, ballIntegratedData>>();
     //List<ballIntegratedData> collectedBalls = new List<ballIntegratedData>();
-  
+    PatchBank bank;
     void Start()
     {
+       
+
         curEvent = new List<eventData>();
         GameObject timeCon = GameObject.Find("timeController");
         if (timeCon!=null)
         {
             timeController = timeCon.GetComponent<Slider>();
+            playbackController = timeCon.GetComponent<TimeSlider>();
+            if(playbackController!=null)
+            {
+                playbackController.OnStartPlaying.AddListener(delegate { StartedPlaying(); });
+                playbackController.OnStopPlaying.AddListener(delegate { StoppedPlaying(); });
+            }
         }
         GameObject gapCon = GameObject.Find("deltaController");
         if (gapCon != null)
@@ -211,13 +225,35 @@ public class DOMController : MonoBehaviour
             {
                 if (bl != null)
                 {
-                    bl.setColor(new Color(0.5f, 0.5f, 0.5f));
+                    bl.setColor(new Color(0.9f, 0.9f, 0.9f));
                     bl.setScale(baseScale);
                 }
             }
         }
-        
 
+        bank = new PatchBank(bankSource);
+        if(bank==null)
+        {
+            Debug.LogFormat("Couldn't load music bank: {0}", bankSource);
+        }
+        else
+        {
+            int maxPatch = 0;
+            Patch[] arr = bank.GetBank(0);
+            while (maxPatch<arr.Length)
+            {
+                if (arr[maxPatch] == null) break;
+                maxPatch++;
+            }
+            for(int i=0;i<stringArray.Length;i++)
+            {
+                if(stringArray[i]!=null)
+                {
+                    //Debug.Log(ballArray[i].balls.Length);
+                    stringArray[i].SetupWithBank(bank, i, maxPatch, 20, 85, ballArray[i+1].balls.Length, stringArray.Length);
+                }
+            }
+        }
         // size = scale * ( 0.2 * accum ) ** power
         updateToSet();
     }
@@ -225,6 +261,21 @@ public class DOMController : MonoBehaviour
     {
         Utilz.currentEventUpdated += updateForce;
         Debug.Log("Nyanya");
+    }
+
+    void StartedPlaying()
+    {
+
+    }
+    void StoppedPlaying()
+    {
+        for (int i = 0; i < stringArray.Length; i++)
+        {
+            if (stringArray[i] != null)
+            {
+                stringArray[i].StopPlaying();
+            }
+        }
     }
     void OnDestroy()
     {
@@ -391,14 +442,15 @@ public class DOMController : MonoBehaviour
             foreach(ballIntegratedData id in beforeBalls)
             {
                 ballArray[id.stId].balls[id.domId].setScale(baseScale);
-                ballArray[id.stId].balls[id.domId].setColor(new Color(0.5f, 0.5f, 0.5f));
+                ballArray[id.stId].balls[id.domId].setColor(new Color(0.9f, 0.9f, 0.9f));
+                if (force) ballArray[id.stId].balls[id.domId].resetSig();
 
             }
         }
          
         List<ballIntegratedData> afterBalls = new List<ballIntegratedData>();
-        float start = timeSpan.value;// nsld; TODO
-        float end = timeSpan.value2;//nsld + tgap;
+        float start = timeSpan.value;//  TODO
+        float end = timeSpan.value2;//
         if (end > 1.0f) end = 1.0f;
         List<ballIntegratedData> collectedBalls = EventRestAPI.Instance.currentEvent.ballData;
         foreach (ballIntegratedData ball in collectedBalls)
@@ -410,14 +462,31 @@ public class DOMController : MonoBehaviour
                 double sig = ball.getInSpan(start, end, tgap, nsld,ref tscl);
                 if (sig != -1)
                 {
+                    float dsig=ballArray[ball.stId].balls[ball.domId].setAndCompareSig((float)sig);
+
+                    if (dsig>0&&playbackController!=null&&playbackController.IsPlaying)
+                    {
+                        //NoteSelector inst = NoteSelector.GetMainInstance();
+                        // Debug.LogFormat("Sig :{0}", sig);
+                        //if(inst)
+                        //{
+                        //   inst.PlayNote(ballArray[ball.stId].balls[ball.domId].transform.localPosition,(float) sig, 0.12f);
+                        // }
+                        int str = (int)(sig * 40);
+                        if (str < 10) str = 10;
+                        if (str > 70) str = 70;
+
+                        stringArray[ball.stId-1].HitBall(ball.domId, str);
+                    }
                     double scale = (double)baseScale + (EventRestAPI.settings.scaleMul * Math.Pow((0.2 * sig), EventRestAPI.settings.scalePower));
                     ballArray[ball.stId].balls[ball.domId].setScale((float)scale);
                     ballArray[ball.stId].balls[ball.domId].setColor(colorFromBasicMap(tscl));
                 }
                 else
                 {
+                    ballArray[ball.stId].balls[ball.domId].resetSig();
                     ballArray[ball.stId].balls[ball.domId].setScale(baseScale);
-                    ballArray[ball.stId].balls[ball.domId].setColor(new Color(0.5f, 0.5f, 0.5f));
+                    ballArray[ball.stId].balls[ball.domId].setColor(new Color(0.9f, 0.9f, 0.9f));
                 }
             }
         }
