@@ -63,6 +63,12 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
                     Pose hitPose = s_Hits[0].pose;
 
                     spawnedObject = Instantiate(m_PlacedPrefab, hitPose.position, hitPose.rotation);
+                    DOMController tcon = spawnedObject.GetComponent<DOMController>();
+                    if(tcon!=null)
+                    {
+                        tcon.zoomChange();
+                        tcon.updateForce();
+                    }
                     instObjects.Add(spawnedObject);
                     while (instObjects.Count > 3)
                     {
