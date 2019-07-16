@@ -52,9 +52,13 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
         if (Input.touchCount > 0)
         {
             Touch touch = Input.GetTouch(0);
-            if (EventSystem.current.IsPointerOverGameObject(touch.fingerId))
+            for (int i = 0; i < Input.touchCount; i++)
             {
-                return;
+                Touch mtouch = Input.GetTouch(i);
+                if (EventSystem.current.IsPointerOverGameObject(mtouch.fingerId))
+                {
+                    return;
+                }
             }
             if (touch.phase == TouchPhase.Began)
             {
