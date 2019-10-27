@@ -41,6 +41,106 @@ public class UIManager : MonoBehaviour
         set { m_PlaneManager = value; }
     }
 
+    public PlaceMultipleObjectsOnPlane objectPlacer;
+    public void SetPlaneDetection(bool state)
+    {
+        m_PlaneManager.enabled = state;// !m_PlaneManager.enabled;
+
+        if (m_PlaneManager.enabled)
+        {
+           // planeDetectionMessage = "Disable Plane Detection and Hide Existing";
+            SetAllPlanesActive(true);
+        }
+        else
+        {
+           // planeDetectionMessage = "Enable Plane Detection and Show Existing";
+            SetAllPlanesActive(false);
+        }
+
+    }
+
+    void SetAllPlanesActive(bool value)
+    {
+        foreach (var plane in m_PlaneManager.trackables)
+            plane.gameObject.SetActive(value);
+    }
+    int _state = 0;
+    void setState(int state)
+    {
+        switch (state)
+        {
+            case 0: //detection state
+                {
+                    if(!m_ShowingMoveDevice)
+                    {
+                        if (moveDeviceAnimation)
+                            moveDeviceAnimation.SetTrigger(k_FadeOnAnim);
+                    }
+                    m_ShowingMoveDevice = true;
+                    if (m_ShowingTapToPlace)
+                    {
+                        if (tapToPlaceAnimation)
+                            tapToPlaceAnimation.SetTrigger(k_FadeOffAnim);
+                    }
+                    m_ShowingTapToPlace = false;
+                    SetPlaneDetection(true);
+                    if (objectPlacer != null) objectPlacer.clearObjects();
+                    objectPlacer.SetMode(TouchReactionMode.Off);
+                    _state = 0;
+                    break;
+                }
+                case 1: //placing phase
+                {
+                    if (m_ShowingMoveDevice)
+                    {
+                        if (moveDeviceAnimation)
+                            moveDeviceAnimation.SetTrigger(k_FadeOffAnim);
+                    }
+                    m_ShowingMoveDevice = false;
+                    if (!m_ShowingTapToPlace)
+                    {
+                        if (tapToPlaceAnimation)
+                            tapToPlaceAnimation.SetTrigger(k_FadeOnAnim);
+                    }
+                    m_ShowingTapToPlace = true;
+                    SetPlaneDetection(true);
+                    if (objectPlacer != null&&state==2) objectPlacer.clearObjects();
+                    objectPlacer.SetMode(TouchReactionMode.Placing);
+                    _state = 1;
+                    break;
+                }
+            case 2:
+                {
+                    if (m_ShowingMoveDevice)
+                    {
+                        if (moveDeviceAnimation)
+                            moveDeviceAnimation.SetTrigger(k_FadeOffAnim);
+                    }
+                    m_ShowingMoveDevice = false;
+                    if (m_ShowingTapToPlace)
+                    {
+                        if (tapToPlaceAnimation)
+                            tapToPlaceAnimation.SetTrigger(k_FadeOffAnim);
+                    }
+                    m_ShowingTapToPlace = false;
+                    SetPlaneDetection(false);
+                    objectPlacer.SetMode(TouchReactionMode.Zooming);
+                    _state = 2;
+                    break;
+                }
+            default:
+                {
+                    Debug.LogFormat("Unknown state {0}",state);
+                    break;
+                }
+        }
+
+    }
+
+    public void PushReset()
+    {
+        setState(0);
+    }
     [SerializeField]
     Animator m_MoveDeviceAnimation;
 
@@ -83,17 +183,19 @@ public class UIManager : MonoBehaviour
 
     void FrameChanged(ARCameraFrameEventArgs args)
     {
-        if (PlanesFound() && m_ShowingMoveDevice)
-        {
-            if (moveDeviceAnimation)
-                moveDeviceAnimation.SetTrigger(k_FadeOffAnim);
+        /* if (PlanesFound() && m_ShowingMoveDevice)
+         {
+             if (moveDeviceAnimation)
+                 moveDeviceAnimation.SetTrigger(k_FadeOffAnim);
 
-            if (tapToPlaceAnimation)
-                tapToPlaceAnimation.SetTrigger(k_FadeOnAnim);
+             if (tapToPlaceAnimation)
+                 tapToPlaceAnimation.SetTrigger(k_FadeOnAnim);
 
-            m_ShowingTapToPlace = true;
-            m_ShowingMoveDevice = false;
-        }
+             m_ShowingTapToPlace = true;
+             m_ShowingMoveDevice = false;
+         }*/
+         if(_state==0&&PlanesFound())
+           setState(1);
     }
 
     bool PlanesFound()
@@ -106,12 +208,13 @@ public class UIManager : MonoBehaviour
 
     void PlacedObject()
     {
-        if (m_ShowingTapToPlace)
-        {
-            if (tapToPlaceAnimation)
-                tapToPlaceAnimation.SetTrigger(k_FadeOffAnim);
+       /*  if (m_ShowingTapToPlace)
+         {
+             if (tapToPlaceAnimation)
+                 tapToPlaceAnimation.SetTrigger(k_FadeOffAnim);
 
-            m_ShowingTapToPlace = false;
-        }
+             m_ShowingTapToPlace = false;
+         }*/
+        setState(2);
     }
 }

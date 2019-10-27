@@ -747,7 +747,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.005521063, y: 0.10961859}
   m_AnchorMax: {x: 0.10652107, y: 0.66320443}
-  m_AnchoredPosition: {x: 0.0008869171, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &163803025
@@ -872,8 +872,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.005521063, y: 0.10961859, z: 0.10652107, w: 0.66320443}
   portraitAnchor: {x: 0.032592595, y: 0.21969953, z: 0.20116898, w: 0.50920194}
-  landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
-  portraitOffset: {x: 135.16312, y: 0, z: -135.16312, w: 0}
+  landscapeOffset: {x: -160.14325, y: 0, z: 160.14325, w: 0}
+  portraitOffset: {x: 712.3435, y: 0, z: -712.3435, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &173498938
@@ -938,6 +938,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_PlacedPrefab: {fileID: 1591901351676804745, guid: 43f081980ac5ea84ca56ff1b9803d888,
     type: 3}
+  zoom: {fileID: 267147483}
 --- !u!114 &173498942
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1413,6 +1414,8 @@ GameObject:
   - component: {fileID: 267147481}
   - component: {fileID: 267147480}
   - component: {fileID: 267147482}
+  - component: {fileID: 267147484}
+  - component: {fileID: 267147483}
   m_Layer: 5
   m_Name: ZoomCover
   m_TagString: Untagged
@@ -1460,7 +1463,7 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: UnityEngine.UI.MaskableGraphic+CullStateChangedEvent, UnityEngine.UI,
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: afcd1f4493542c94b8ea009e3e326ee0, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1496,6 +1499,34 @@ MonoBehaviour:
   portraitOffset: {x: 0, y: -9.800018, z: -12, w: -0.000030517578}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
+--- !u!114 &267147483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 267147478}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2311cd997015a44197a22f9128d17db, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  refDuration: 2
+  fadeDuration: 1
+  zoomspeed: 0.02
+  zoomController: {fileID: 1698979246}
+--- !u!225 &267147484
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 267147478}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 1
 --- !u!1 &277128984
 GameObject:
   m_ObjectHideFlags: 0
@@ -2796,7 +2827,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.9578518, y: 0}
   m_AnchorMax: {x: 1.0040001, y: 0.08400001}
-  m_AnchoredPosition: {x: 0, y: -0.00066280365}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &550329169
@@ -2941,8 +2972,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.9578518, y: 0, z: 1.0040001, w: 0.08400001}
   portraitAnchor: {x: 0.92, y: -0.002, z: 1.0040001, w: 0.03770371}
-  landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
-  portraitOffset: {x: -60, y: -99.28003, z: 0, w: 99.28003}
+  landscapeOffset: {x: 0, y: 84.615974, z: 0, w: -84.615974}
+  portraitOffset: {x: -60, y: -395.12347, z: 0, w: 395.12347}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &566398518
@@ -4786,7 +4817,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.90324074, y: 0.82755554}
   m_AnchorMax: {x: 0.9677593, y: 0.9638519}
-  m_AnchoredPosition: {x: -0.00017929077, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &989943871
@@ -4846,8 +4877,8 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 173498941}
-        m_MethodName: clearObjects
+      - m_Target: {fileID: 1026998260551634}
+        m_MethodName: PushReset
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -4911,8 +4942,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.90324074, y: 0.82755554, z: 0.9677593, w: 0.9638519}
   portraitAnchor: {x: 0.814, y: 0.90400004, z: 0.93200004, w: 0.9638519}
-  landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
-  portraitOffset: {x: 95.120026, y: 0, z: -95.120026, w: 0}
+  landscapeOffset: {x: -144.8855, y: 0, z: 144.8855, w: 0}
+  portraitOffset: {x: 501.30624, y: 0, z: -501.30624, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &1003824538
@@ -6403,7 +6434,7 @@ MonoBehaviour:
       m_Calls: []
     m_TypeName: UnityEngine.UI.MaskableGraphic+CullStateChangedEvent, UnityEngine.UI,
       Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: afcd1f4493542c94b8ea009e3e326ee0, type: 3}
   m_Type: 1
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7354,7 +7385,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPortrait: 0
-  landscapeAnchor: {x: 0, y: 0, z: 0, w: 0}
+  landscapeAnchor: {x: 0, y: 0.28571427, z: 1, w: 0.28571427}
   portraitAnchor: {x: 0, y: 0.28571427, z: 1, w: 0.28571427}
   landscapeOffset: {x: 0, y: -25, z: 0, w: 25}
   portraitOffset: {x: 0, y: -50, z: 0, w: 50}
@@ -7915,7 +7946,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.11735186, y: 0.7226763}
   m_AnchorMax: {x: 0.157, y: 0.92420715}
-  m_AnchoredPosition: {x: 2.938497, y: -1.5000305}
+  m_AnchoredPosition: {x: 0, y: -1.5000305}
   m_SizeDelta: {x: 0, y: 3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1617624072
@@ -8007,8 +8038,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.11735186, y: 0.7226763, z: 0.157, w: 0.92420715}
   portraitAnchor: {x: 0.10138889, y: 0.7608918, z: 0.18052116, w: 0.8995962}
-  landscapeOffset: {x: 0, y: -3.0000305, z: 0, w: -0.000030517578}
-  portraitOffset: {x: 69.49274, y: 0, z: -69.49274, w: -13}
+  landscapeOffset: {x: -57.690147, y: -3.0000305, z: 57.690147, w: -0.000030517578}
+  portraitOffset: {x: 338.48755, y: 0, z: -338.48755, w: -13}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &1639889979
@@ -8512,8 +8543,8 @@ RectTransform:
   m_Father: {fileID: 267147479}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.21400002, y: 0.03149907}
-  m_AnchorMax: {x: 0.7787523, y: 0.97}
+  m_AnchorMin: {x: 0.1255015, y: 0.03468642}
+  m_AnchorMax: {x: 0.8672479, y: 0.97}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -8582,7 +8613,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPortrait: 0
-  landscapeAnchor: {x: 0.21400002, y: 0.03149907, z: 0.7787523, w: 0.97}
+  landscapeAnchor: {x: 0.1255015, y: 0.03468642, z: 0.8672479, w: 0.97}
   portraitAnchor: {x: 0.24667278, y: 0.03, z: 0.69584095, w: 0.97}
   landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
   portraitOffset: {x: 0, y: 0, z: 0, w: 0}
@@ -8786,7 +8817,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.21100001, y: 0.17500001}
   m_AnchorMax: {x: 0.82900006, y: 0.8475214}
-  m_AnchoredPosition: {x: 0.0005221367, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1815847059
@@ -8818,8 +8849,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.21100001, y: 0.17500001, z: 0.82900006, w: 0.8475214}
   portraitAnchor: {x: 0.13852365, y: 0.143, z: 0.84254295, w: 0.87246287}
-  landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
-  portraitOffset: {x: 18.594755, y: 15, z: -18.594755, w: -10}
+  landscapeOffset: {x: -6.585787, y: 0, z: 6.585787, w: 0}
+  portraitOffset: {x: 44.387184, y: 15, z: -44.387184, w: -10}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!114 &1815847061
@@ -10166,6 +10197,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_CameraManager: {fileID: 1534471351}
   m_PlaneManager: {fileID: 173498943}
+  objectPlacer: {fileID: 173498941}
   m_MoveDeviceAnimation: {fileID: 1687156742}
   m_TapToPlaceAnimation: {fileID: 1320885799}
 --- !u!1 &1132834207110817

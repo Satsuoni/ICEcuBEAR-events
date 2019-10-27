@@ -1,7 +1,8 @@
 ﻿Shader "Unlit/TestShader" {
 	Properties
 	{
-		_MainTex("Texture", 2D) = "white" {}
+		_maxAngle("StarSize", Range(0.001, 0.03)) = 0.01 
+		_fluxGain("FluxSize", Range(0.01, 0.99)) = 0.4
 	}
 	SubShader{
 		Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
@@ -38,8 +39,9 @@
 			float3 worldPos : TEXCOORD4;
 		};
 
-		sampler2D _MainTex;
-		float4 _MainTex_ST;
+	
+		float _maxAngle;
+		float _fluxGain;
 		float4 xvec;
 		float4 yvec;
 	
@@ -64,7 +66,7 @@
 		//clr.x is flux and clr.y is potentially hue/redshift, nothing now...
 		float df = dot(coords, normalize(vert));
 		float angl = 2 * (1 - df);
-		float maxangl = 0.01*(1 + 0.5*clr.x);
+		float maxangl = _maxAngle *((1-_fluxGain) + _fluxGain *clr.x);
 		maxangl = maxangl * maxangl;
 		const float3 base = float3(0.9, 0.9, 1);
 		return step(angl, maxangl)*base*(1 - angl / maxangl);

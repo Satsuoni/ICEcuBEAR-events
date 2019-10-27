@@ -4,6 +4,13 @@ using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
 using UnityEngine.EventSystems;
+
+public enum TouchReactionMode
+{
+    Placing,
+    Zooming,
+    Off
+}
 [RequireComponent(typeof(ARRaycastManager))]
 public class PlaceMultipleObjectsOnPlane : MonoBehaviour
 {
@@ -11,6 +18,7 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
     [Tooltip("Instantiates this prefab on a plane at the touch location.")]
     GameObject m_PlacedPrefab;
 
+    public ZoomFader zoom;
     /// <summary>
     /// The prefab to instantiate on touch.
     /// </summary>
@@ -47,7 +55,8 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
         }
         instObjects.Clear();
     }
-    void Update()
+    TouchReactionMode zmode;
+    void PlaceUpdate()
     {
         if (Input.touchCount > 0)
         {
@@ -68,7 +77,7 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
 
                     spawnedObject = Instantiate(m_PlacedPrefab, hitPose.position, hitPose.rotation);
                     DOMController tcon = spawnedObject.GetComponent<DOMController>();
-                    if(tcon!=null)
+                    if (tcon != null)
                     {
                         tcon.zoomChange();
                         tcon.updateForce();
@@ -87,5 +96,58 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
                 }
             }
         }
+    }
+    void ZoomUpdate()
+    {
+        if(Input.touchCount==1)
+        {
+            if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+            {
+                return;
+            }
+            if(zoom!=null)
+            {
+                zoom.Show();
+            }
+        }
+        if (Input.touchCount == 2)
+        {
+            // Store both touches.
+            Touch touchZero = Input.GetTouch(0);
+            Touch touchOne = Input.GetTouch(1);
+
+            // Find the position in the previous frame of each touch.
+            Vector2 touchZeroPrevPos = touchZero.position - touchZero.deltaPosition;
+            Vector2 touchOnePrevPos = touchOne.position - touchOne.deltaPosition;
+
+            // Find the magnitude of the vector (the distance) between the touches in each frame.
+            float prevTouchDeltaMag = (touchZeroPrevPos - touchOnePrevPos).magnitude;
+            float touchDeltaMag = (touchZero.position - touchOne.position).magnitude;
+
+            // Find the difference in the distances between each frame.
+            float deltaMagnitudeDiff = touchDeltaMag - prevTouchDeltaMag;
+            float scrn = Mathf.Min(Screen.width, Screen.height);
+            if (zoom != null)
+            {
+                zoom.Show();
+                zoom.UpdateZoom(deltaMagnitudeDiff/scrn);
+            }
+         
+        }
+    }
+    public void SetMode(TouchReactionMode mod)
+    {
+        zmode = mod;
+    }
+    void Update()
+    {
+  
+        switch (zmode)
+        {
+            case TouchReactionMode.Off: break;
+            case TouchReactionMode.Placing: PlaceUpdate();break;
+            case TouchReactionMode.Zooming: ZoomUpdate(); break;
+        }
+
     }
 }
