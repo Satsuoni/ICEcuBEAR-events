@@ -5,8 +5,8 @@ using UnityEngine;
 
 public class Landscaped : MonoBehaviour
 {
-    private static Vector2 inv2 = new Vector2(-1e5f, -2e5f);
-    private static Vector4 inv4 = new Vector4(-1e5f, -2e5f,-2.5e6f,-1);
+    public static Vector2 inv2 = new Vector2(-1e5f, -2e5f);
+    public static Vector4 inv4 = new Vector4(-1e5f, -2e5f,-2.5e6f,-1);
     
     public bool isPortrait = false;
     public Vector4 landscapeAnchor=inv4;
@@ -39,6 +39,24 @@ public class Landscaped : MonoBehaviour
                 landscapeOffset = new Vector4(self.offsetMin.x, self.offsetMin.y, self.offsetMax.x, self.offsetMax.y);
                 landscapePivot = self.pivot;
             }
+        }
+    }
+    public void Align()
+    {
+        if(isPortrait)
+        {
+            self.anchorMax = new Vector2(portraitAnchor.z, portraitAnchor.w);
+            self.anchorMin = new Vector2(portraitAnchor.x, portraitAnchor.y);
+            self.offsetMin = new Vector2(portraitOffset.x, portraitOffset.y);
+            self.offsetMax = new Vector2(portraitOffset.z, portraitOffset.w);
+            self.pivot = portraitPivot;
+        }
+        else
+        {
+            self.anchorMax = new Vector2(landscapeAnchor.z, landscapeAnchor.w);
+            self.anchorMin = new Vector2(landscapeAnchor.x, landscapeAnchor.y);
+            self.offsetMin = new Vector2(landscapeOffset.x, landscapeOffset.y);
+            self.offsetMax = new Vector2(landscapeOffset.z, landscapeOffset.w);
         }
     }
     public void Switch(bool isPor)
