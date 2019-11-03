@@ -26,7 +26,7 @@ public class AutoDefault : MonoBehaviour
     void Awake()
     {
         Utilz.currentEventUpdated += updateRange;
-        Debug.Log("defualt");
+       // Debug.Log("defualt");
     }
     void OnDestroy()
     {

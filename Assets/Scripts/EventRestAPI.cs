@@ -314,7 +314,7 @@ public class ProcessEventCsv : ThreadedJob
   
         fullEventData ed = new fullEventData();
         ed.minPureTime = timeMin;
-        ed.minPureTime = timeMax;
+        ed.maxPureTime = timeMax;
         ed.description = eDesc;
 
         if(eDesc.humName!=null)
@@ -1525,15 +1525,96 @@ public class EventRestAPI : MonoBehaviour
             Utilz.UpdateEventList();
         StartCoroutine(updateComments());
     }
+    public trackData forcedTracks(evId id)
+    {
+        trackData frc=null;
+      if(id.Key== 133119&&id.Value== 22683750)
+        {
+            frc = new trackData();
+            frc.azi_rad = 1.5359396402731433f;
+            frc.dec_rad = 0.21948083061719348f;
+            frc.mjd = 58757.8397936808;
+            frc.ra_rad = 5.486531456790467;
+            frc.rec_t0 = 10991.37383428116f;
+            frc.rec_x = -308.8849482380408f;
+            frc.rec_y = -318.0330558043538f;
+            frc.rec_z = 8.055729493786885f;
+            frc.zen_rad = 1.7916152089981798f;
+           
+        }
 
+        if (id.Key == 132910 && id.Value == 57145925)
+        {
+            frc = new trackData();
+            frc.azi_rad = 2.160849318134296f;
+            frc.dec_rad = 0.18339852545918298f;
+            frc.mjd = 58694.86853369251;
+            frc.ra_rad = 3.958934679276621;
+            frc.rec_t0 = 17437.752211638854f;
+            frc.rec_x = -175.9504622785223f;
+            frc.rec_y = -76.50362830103359f;
+            frc.rec_z = -502.3460613431437f;
+            frc.zen_rad = 1.752881090566949f;
+           
+        }
+        if (id.Key == 124861 && id.Value == 32863663)
+        {
+            frc = new trackData();
+            frc.azi_rad = 5.463772410377908f;
+            frc.dec_rad = 0.1948552930855824f;
+            frc.mjd = 56819.204436954555;
+            frc.ra_rad = 1.9165467795802764;
+            frc.rec_t0 = 10737.919145535296f;
+            frc.rec_x = -135.578239824026f;
+            frc.rec_y = -274.6983698626916f;
+            frc.rec_z = -157.7610224514117f;
+            frc.zen_rad = 1.7652231018807554f;
+         }
+
+        if (id.Key == 130033 && id.Value == 50579430)
+        {
+            frc = new trackData();
+            frc.azi_rad = 5.7245209670173285f;
+            frc.dec_rad = 0.09872252891807387f;
+            frc.mjd = 58018.87118560489;
+            frc.ra_rad = 1.3492368854225945;
+            frc.rec_t0 = 10783.657746106113f;
+            frc.rec_x = -70.62527207138828f;
+            frc.rec_y = -316.0976376920778f;
+            frc.rec_z = -247.34569170289114f;
+            frc.zen_rad = 1.6699855005454454f;
+        }
+        if (id.Key == 132974 && id.Value == 67924813)
+        {
+            frc = new trackData();
+            frc.azi_rad = 3.0076936547194935f;
+            frc.dec_rad = 0.016708671281222044f;
+            frc.mjd = 58714.73222496411;
+            frc.ra_rad = 2.597168760800879;
+            frc.rec_t0 = 10983.295625075258f;
+            frc.rec_x = -83.05759677740252f;
+            frc.rec_y = 93.70207677231019f;
+            frc.rec_z = -46.6655356299309f;
+            frc.zen_rad = 1.585833004839499f;
+           // 132974,,,67924813,,,,,,
+        }
+
+
+
+            return frc;
+    }
     void assignExpected()
     {
         Debug.Log("Assigning expected");
         if (expectedNextEvent.Key == -1) return;
         if (!cache.checkCache(expectedNextEvent)) return;
         fullEventData dat = cache.getItem(expectedNextEvent);
-
+      
         if (dat == null) return;
+        if(dat.track==null)
+        {
+            dat.track = forcedTracks(expectedNextEvent);
+        }
         Debug.Log("Got cached");
         if (dat.description==null)
         {

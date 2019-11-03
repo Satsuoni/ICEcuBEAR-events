@@ -69,7 +69,8 @@
 		float maxangl = _maxAngle *((1-_fluxGain) + _fluxGain *clr.x);
 		maxangl = maxangl * maxangl;
 		const float3 base = float3(0.9, 0.9, 1);
-		return step(angl, maxangl)*base*(1 - angl / maxangl);
+		float da = angl / maxangl;
+		return step(angl, maxangl)*base*(1 - da);
 	}
 
 	fixed4 frag(v2f i) : SV_Target{

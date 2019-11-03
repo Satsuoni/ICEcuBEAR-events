@@ -8,7 +8,7 @@ using AudioSynthesis.Bank;
 public class NoteTest : MonoBehaviour
 {
     AudioSource src;
-    [SerializeField] TextAssetStream bankSource;
+    [SerializeField] TextAssetStream bankSource=new TextAssetStream();
     Synthesizer synthesizer;
     int sampleRate = 44100;
     int bufferSize = 1024;
