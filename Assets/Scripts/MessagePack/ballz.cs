@@ -43,15 +43,16 @@ namespace MessagePack.Resolvers
 
         static GeneratedResolverGetFormatterHelper()
         {
-            lookup = new global::System.Collections.Generic.Dictionary<Type, int>(7)
+            lookup = new global::System.Collections.Generic.Dictionary<Type, int>(8)
             {
                 {typeof(global::System.Collections.Generic.List<global::ballIntegratedData>), 0 },
                 {typeof(global::System.Collections.Generic.List<global::SavedEventData>), 1 },
                 {typeof(global::ballIntegratedData), 2 },
-                {typeof(global::eventDesc), 3 },
-                {typeof(global::fullEventData), 4 },
-                {typeof(global::SavedEventData), 5 },
-                {typeof(global::SavedEventsSettings), 6 },
+                {typeof(global::trackData), 3 },
+                {typeof(global::eventDesc), 4 },
+                {typeof(global::fullEventData), 5 },
+                {typeof(global::SavedEventData), 6 },
+                {typeof(global::SavedEventsSettings), 7 },
             };
         }
 
@@ -65,10 +66,11 @@ namespace MessagePack.Resolvers
                 case 0: return new global::MessagePack.Formatters.ListFormatter<global::ballIntegratedData>();
                 case 1: return new global::MessagePack.Formatters.ListFormatter<global::SavedEventData>();
                 case 2: return new MessagePack.Formatters.ballIntegratedDataFormatter();
-                case 3: return new MessagePack.Formatters.eventDescFormatter();
-                case 4: return new MessagePack.Formatters.fullEventDataFormatter();
-                case 5: return new MessagePack.Formatters.SavedEventDataFormatter();
-                case 6: return new MessagePack.Formatters.SavedEventsSettingsFormatter();
+                case 3: return new MessagePack.Formatters.trackDataFormatter();
+                case 4: return new MessagePack.Formatters.eventDescFormatter();
+                case 5: return new MessagePack.Formatters.fullEventDataFormatter();
+                case 6: return new MessagePack.Formatters.SavedEventDataFormatter();
+                case 7: return new MessagePack.Formatters.SavedEventsSettingsFormatter();
                 default: return null;
             }
         }
@@ -91,7 +93,7 @@ namespace MessagePack.Formatters
 {
     using System;
     using MessagePack;
-    using UnityEngine;
+
 
     public sealed class ballIntegratedDataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::ballIntegratedData>
     {
@@ -173,6 +175,109 @@ namespace MessagePack.Formatters
             ____result.icharge = __icharge__;
             ____result.stId = __stId__;
             ____result.domId = __domId__;
+            return ____result;
+        }
+    }
+
+
+    public sealed class trackDataFormatter : global::MessagePack.Formatters.IMessagePackFormatter<global::trackData>
+    {
+
+        public int Serialize(ref byte[] bytes, int offset, global::trackData value, global::MessagePack.IFormatterResolver formatterResolver)
+        {
+            if (value == null)
+            {
+                return global::MessagePack.MessagePackBinary.WriteNil(ref bytes, offset);
+            }
+            
+            var startOffset = offset;
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 9);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.azi_rad);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.dec_rad);
+            offset += MessagePackBinary.WriteDouble(ref bytes, offset, value.mjd);
+            offset += MessagePackBinary.WriteDouble(ref bytes, offset, value.ra_rad);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.rec_t0);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.rec_x);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.rec_y);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.rec_z);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.zen_rad);
+            return offset - startOffset;
+        }
+
+        public global::trackData Deserialize(byte[] bytes, int offset, global::MessagePack.IFormatterResolver formatterResolver, out int readSize)
+        {
+            if (global::MessagePack.MessagePackBinary.IsNil(bytes, offset))
+            {
+                readSize = 1;
+                return null;
+            }
+
+            var startOffset = offset;
+            var length = global::MessagePack.MessagePackBinary.ReadArrayHeader(bytes, offset, out readSize);
+            offset += readSize;
+
+            var __azi_rad__ = default(float);
+            var __dec_rad__ = default(float);
+            var __mjd__ = default(double);
+            var __ra_rad__ = default(double);
+            var __rec_t0__ = default(float);
+            var __rec_x__ = default(float);
+            var __rec_y__ = default(float);
+            var __rec_z__ = default(float);
+            var __zen_rad__ = default(float);
+
+            for (int i = 0; i < length; i++)
+            {
+                var key = i;
+
+                switch (key)
+                {
+                    case 0:
+                        __azi_rad__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 1:
+                        __dec_rad__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 2:
+                        __mjd__ = MessagePackBinary.ReadDouble(bytes, offset, out readSize);
+                        break;
+                    case 3:
+                        __ra_rad__ = MessagePackBinary.ReadDouble(bytes, offset, out readSize);
+                        break;
+                    case 4:
+                        __rec_t0__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 5:
+                        __rec_x__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 6:
+                        __rec_y__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 7:
+                        __rec_z__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 8:
+                        __zen_rad__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    default:
+                        readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
+                        break;
+                }
+                offset += readSize;
+            }
+
+            readSize = offset - startOffset;
+
+            var ____result = new global::trackData();
+            ____result.azi_rad = __azi_rad__;
+            ____result.dec_rad = __dec_rad__;
+            ____result.mjd = __mjd__;
+            ____result.ra_rad = __ra_rad__;
+            ____result.rec_t0 = __rec_t0__;
+            ____result.rec_x = __rec_x__;
+            ____result.rec_y = __rec_y__;
+            ____result.rec_z = __rec_z__;
+            ____result.zen_rad = __zen_rad__;
             return ____result;
         }
     }
@@ -274,13 +379,14 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 6);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 7);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventName, formatterResolver);
             offset += formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::ballIntegratedData>>().Serialize(ref bytes, offset, value.ballData, formatterResolver);
             offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.isteps);
             offset += formatterResolver.GetFormatterWithVerify<global::eventDesc>().Serialize(ref bytes, offset, value.description, formatterResolver);
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.minPureTime);
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.maxPureTime);
+            offset += formatterResolver.GetFormatterWithVerify<global::trackData>().Serialize(ref bytes, offset, value.track, formatterResolver);
             return offset - startOffset;
         }
 
@@ -302,6 +408,7 @@ namespace MessagePack.Formatters
             var __description__ = default(global::eventDesc);
             var __minPureTime__ = default(float);
             var __maxPureTime__ = default(float);
+            var __track__ = default(global::trackData);
 
             for (int i = 0; i < length; i++)
             {
@@ -327,6 +434,9 @@ namespace MessagePack.Formatters
                     case 5:
                         __maxPureTime__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
                         break;
+                    case 6:
+                        __track__ = formatterResolver.GetFormatterWithVerify<global::trackData>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
                         break;
@@ -343,6 +453,7 @@ namespace MessagePack.Formatters
             ____result.description = __description__;
             ____result.minPureTime = __minPureTime__;
             ____result.maxPureTime = __maxPureTime__;
+            ____result.track = __track__;
             return ____result;
         }
     }
@@ -580,8 +691,6 @@ namespace MessagePack.Formatters
                         break;
                     case 2:
                         __eventData__ = formatterResolver.GetFormatterWithVerify<global::System.Collections.Generic.List<global::SavedEventData>>().Deserialize(bytes, offset, formatterResolver, out readSize);
-                        Debug.Log(__eventData__.Count);
-
                         break;
                     case 3:
                         __animationSpeed__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);

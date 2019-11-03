@@ -128,6 +128,28 @@ public class ballIntegratedData
     }
 }
 [MessagePackObject]
+public class trackData
+{
+    [Key(0)]
+    public float azi_rad; //local azimuth
+    [Key(1)]
+    public float dec_rad; // star
+    [Key(2)]
+    public double mjd; //julian
+    [Key(3)]
+    public double ra_rad; //star
+    [Key(4)]
+    public float rec_t0; //initial point
+    [Key(5)]
+    public float rec_x;
+    [Key(6)]
+    public float rec_y;
+    [Key(7)]
+    public float rec_z;
+    [Key(8)]
+    public float zen_rad; //local 
+}
+[MessagePackObject]
 public class fullEventData
 {
     [Key(0)]
@@ -142,8 +164,17 @@ public class fullEventData
     public float minPureTime;
     [Key(5)]
     public float maxPureTime;
-
+    [Key(6)]
+    public trackData track;
 }
+
+[Serializable]
+public class forceTrack
+{
+    public KeyValuePair<int, int> eid;
+    public trackData frc;
+}
+
 public class DOMController : MonoBehaviour
 {
     //time, signal, om, string, time_period
@@ -172,11 +203,34 @@ public class DOMController : MonoBehaviour
     // Dictionary<int, Dictionary<int, ballIntegratedData>> affBalls = new Dictionary<int, Dictionary<int, ballIntegratedData>>();
     //List<ballIntegratedData> collectedBalls = new List<ballIntegratedData>();
     PatchBank bank;
+    public float ni = 1.33f;
+    public forceTrack ftrack = new forceTrack();
+    public RefPoint ref1;
+    public RefPoint ref2;
+    public RefPoint ref3;
+    public RefPoint ref4;
+    public GameObject cone;
+    public GameObject pole; //length:10*z, point: 000
+    public GameObject earth;
+    public GameObject epole;
+    public GameObject indicator;
     void Start()
     {
-       
+        ftrack.eid = new KeyValuePair<int, int>(132974, 67924813);
+        ftrack.frc = new trackData();
+        ftrack.frc.azi_rad = 3.00769365471949f;
+        ftrack.frc.dec_rad = 0.016708671281222f;
+        ftrack.frc.mjd = 58714.7322249641;
+        ftrack.frc.ra_rad = 2.59716876080088;
+        ftrack.frc.rec_t0 = 10983.2956250753f;
+        ftrack.frc.rec_x = -83.0575967774025f;
+        ftrack.frc.rec_y = 93.7020767723102f;
+        ftrack.frc.rec_z = -46.6655356299309f;
+        ftrack.frc.zen_rad = 1.5858330048395f;
 
-        curEvent = new List<eventData>();
+
+                                                
+curEvent = new List<eventData>();
         GameObject timeCon = GameObject.Find("timeController");
         if (timeCon!=null)
         {
@@ -333,7 +387,7 @@ public class DOMController : MonoBehaviour
     }
     float prevSld = 0.0f;
     List<ballIntegratedData> beforeBalls = null;
-    public void updateForce()
+    public void updateForce() //event was updated... 
     {
         KeyValuePair<float, float> rng = getDefaultRange();
         Debug.LogFormat("Got range {0} {1}",rng.Key,rng.Value);
@@ -344,6 +398,78 @@ public class DOMController : MonoBehaviour
         if (timeController.value > rng.Value) timeController.SetValueWithoutNotify(rng.Value);
 
         updateToSet(true);
+        if(EventRestAPI.Instance.currentEvent.track !=null)
+        {
+            trackData dat = EventRestAPI.Instance.currentEvent.track;
+            float dsin = Mathf.Sin(dat.zen_rad);
+            float dcos = Mathf.Cos(dat.zen_rad);
+            float rsin = Mathf.Sin(-dat.azi_rad);
+            float rcos = Mathf.Cos(-dat.azi_rad);
+            //Debug.LogFormat("ds:{0} dc:{1} rs:{2} rc:{3}",dsin,dcos,rsin,rcos);
+            //////////////////////////////x/////////z//////////y/////
+            Vector3 forw = new Vector3(dcos * rsin,  -dcos * rcos, dsin);
+            //earth-relative direction, i think ^^
+
+            //south pole: 0 -2; 0;
+            /// celestial sphere: radius 5 local
+            float erad = 2.0f;
+            float crad = 5.0f;
+            Vector3 spole = new Vector3(0, -erad, 0);
+            float a = forw.sqrMagnitude;
+            float b = 2 * (spole.x*forw.x+spole.y*forw.y+spole.z*forw.z);
+            float c = spole.sqrMagnitude - crad * crad;
+            float det = Mathf.Sqrt(b*b-4*a*c);
+            float sol = (-b + det) / (2 * a);
+            Vector3 from = spole + forw * sol;
+          
+            float cdsin = Mathf.Sin(dat.dec_rad );
+            float cdcos = Mathf.Cos(dat.dec_rad );
+            float crsin = Mathf.Sin((float)dat.ra_rad );
+            float crcos = Mathf.Cos((float)dat.ra_rad);
+            Vector3 ft = new Vector3(from.x,from.z,from.y);
+            //dcos*rcos,dcos*rsin,dsin);
+            Vector3 to = ( new Vector3(   cdcos * crcos, cdcos * crsin, cdsin)).normalized*crad;
+            {
+               // earth.gameObject.transform.localRotation = Quaternion.FromToRotation(from.normalized, to.normalized);
+                Quaternion q;
+                Vector3 a1 = Vector3.Cross(to.normalized, from.normalized);
+                q.x= a1.x;
+                q.y = a1.y;
+                q.z = a1.z;
+                q.w = 1 + Vector3.Dot(to.normalized, from.normalized);
+              
+            }
+            epole.transform.localPosition = spole;
+            epole.transform.localRotation = Quaternion.LookRotation(forw);
+            indicator.transform.localRotation = Quaternion.LookRotation(from.normalized) ;
+            indicator.transform.localScale = new Vector3(0.05f, 0.05f, from.magnitude / 10);
+            epole.transform.localScale = new Vector3(0.05f, 0.05f, sol/10);
+            // Debug.LogFormat("Sol: {0}",sol);
+            // Debug.LogFormat("From: {0}", from);
+            // Debug.LogFormat("res: {0}", a *sol*sol+b*sol+c);
+            // Debug.Log(forw);
+            // Debug.Log(to);
+            RotateAnim an = earth.GetComponent<RotateAnim>();
+            Quaternion erot= Quaternion.FromToRotation(from.normalized, to.normalized);
+            if (an != null)
+            {
+                an.SetRotation(erot);
+            }
+            else
+            {
+                earth.gameObject.transform.localRotation = erot;
+            }
+          // Debug.Log("^^^^^^");
+        }
+        else
+        {
+            if(epole!=null)
+            {
+                epole.transform.localPosition = Vector3.zero;
+                epole.transform.localRotation = Quaternion.identity;
+                epole.transform.localScale = new Vector3(0.05f, 0.05f, 0.01f);
+            }
+        }
     }
     public static KeyValuePair<float, float> getDefaultRange()
     {
@@ -493,7 +619,99 @@ public class DOMController : MonoBehaviour
         // public float delay = 0.01f;
         //public float tgap = 0.1f;
         beforeBalls = afterBalls;
-}
+        //track
+        trackData track = null;
+        if (EventRestAPI.Instance.currentEvent.track!=null)
+        {
+            track = EventRestAPI.Instance.currentEvent.track;
+
+        }
+        else
+        {
+       
+
+            if (ftrack!=null&&EventRestAPI.Instance.currentEvent.description.run==ftrack.eid.Key&&
+                EventRestAPI.Instance.currentEvent.description.evn == ftrack.eid.Value)
+            {
+                track = ftrack.frc;
+                EventRestAPI.Instance.currentEvent.track=track;
+                //EventRestAPI.Instance.currentEvent.sav
+                //   Debug.Log("Forcing track ");
+            }
+        }
+        float t1 = EventRestAPI.Instance.currentEvent.maxPureTime;
+        float t0 = EventRestAPI.Instance.currentEvent.minPureTime;
+        if (t0 > t1)
+        {
+            float tt = t0;
+            t0 = t1; t1 = tt;
+        }
+        float atime = nsld * (t1 - t0) + t0;
+        if(track==null||track.rec_t0>atime+0.001f)
+        {
+            pole.SetActive(false);
+            cone.SetActive(false);
+        }
+        else
+        {
+            pole.SetActive(true);
+            cone.SetActive(true);
+        }
+        if (track!=null)
+        {
+            if(ref1==null||ref2==null||ref3==null||ref4==null)
+            {
+                Debug.Log("Need reference points");
+                return;
+            }
+            if(cone==null||pole==null)
+            {
+                Debug.Log("Need cone and pole");
+                return;
+            }
+
+           // Debug.Log(atime);
+            //Debug.Log(track.rec_t0);
+            if (track.rec_t0 > atime) return;
+            Vector3 tdir = new Vector3(Mathf.Sin(track.zen_rad)*Mathf.Cos(track.azi_rad), Mathf.Sin(track.zen_rad) * Mathf.Sin(track.azi_rad), Mathf.Cos(track.zen_rad));
+            float vel = 0.299792458f / ni;
+            float dt = atime - track.rec_t0;
+            Vector3 ice_offs= -tdir * vel * dt;
+            Vector3 ice_pos = new Vector3(track.rec_x, track.rec_y, track.rec_z)+ice_offs;
+            //ref1.gameObject.transform.localPosition;
+            Matrix4x4 trans=new Matrix4x4();
+            Vector3 c1 = ref1.gameObject.transform.localPosition;
+            Vector3 c2 = ref2.gameObject.transform.localPosition;
+            Vector3 c3 = ref3.gameObject.transform.localPosition;
+            Vector3 c4 = ref4.gameObject.transform.localPosition;
+            trans.SetColumn(0, new Vector4(c1.x, c1.y, c1.z, 1));
+            trans.SetColumn(1, new Vector4(c2.x, c2.y, c2.z, 1));
+            trans.SetColumn(2, new Vector4(c3.x, c3.y, c3.z, 1));
+            trans.SetColumn(3, new Vector4(c4.x, c4.y, c4.z, 1));
+            Matrix4x4 ice = new Matrix4x4();
+
+            Vector3 i1 = ref1.icecube_pt;
+            Vector3 i2 = ref2.icecube_pt;
+            Vector3 i3 = ref3.icecube_pt;
+            Vector3 i4 = ref4.icecube_pt;
+            ice.SetColumn(0, new Vector4(i1.x, i1.y, i1.z, 1));
+            ice.SetColumn(1, new Vector4(i2.x, i2.y, i2.z, 1));
+            ice.SetColumn(2, new Vector4(i3.x, i3.y, i3.z, 1));
+            ice.SetColumn(3, new Vector4(i4.x, i4.y, i4.z, 1));
+
+            Matrix4x4 inv = trans*ice.inverse;
+            Vector3 un_pos0=inv.MultiplyPoint3x4(new Vector3(track.rec_x, track.rec_y, track.rec_z));
+            Vector3 un_pos1 = inv.MultiplyPoint3x4(ice_pos);
+            Quaternion rot=Quaternion.LookRotation(un_pos0-un_pos1);
+            pole.transform.localRotation = rot;
+            cone.transform.localRotation = rot;
+            float sclen = (un_pos0 - un_pos1).magnitude;
+            pole.transform.localScale = new Vector3(1, 1, sclen / 10);
+            pole.transform.localPosition =  un_pos1;
+            cone.transform.localPosition = un_pos1;
+
+        }
+    }
     public void ValueChange()
     {
         updateToSet();
