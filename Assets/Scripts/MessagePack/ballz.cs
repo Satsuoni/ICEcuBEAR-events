@@ -294,7 +294,7 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 6);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 7);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.run);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.evn);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.baseDesc, formatterResolver);
@@ -302,7 +302,6 @@ namespace MessagePack.Formatters
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventDate, formatterResolver);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.humName, formatterResolver);
             offset += formatterResolver.GetFormatterWithVerify<global::trackData>().Serialize(ref bytes, offset, value.track, formatterResolver);
-
             return offset - startOffset;
         }
 
@@ -325,6 +324,7 @@ namespace MessagePack.Formatters
             var __eventDate__ = default(string);
             var __humName__ = default(string);
             var __track__ = default(global::trackData);
+
             for (int i = 0; i < length; i++)
             {
                 var key = i;
