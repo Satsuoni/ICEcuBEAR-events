@@ -350,12 +350,14 @@ curEvent = new List<eventData>();
             }
         }
         // size = scale * ( 0.2 * accum ) ** power
-        updateToSet();
+        updateToSet(true);
+        updateTrackRot();
     }
     void Awake()
     {
         Utilz.currentEventUpdated += updateForce;
         Debug.Log("Nyanya");
+       
     }
 
     void StartedPlaying()
@@ -428,6 +430,86 @@ curEvent = new List<eventData>();
     }
     float prevSld = 0.0f;
     List<ballIntegratedData> beforeBalls = null;
+    void updateTrackRot()
+    {
+        if(EventRestAPI.Instance.currentEvent.track==null&& EventRestAPI.Instance.currentEvent.description.track!=null)
+        {
+            EventRestAPI.Instance.currentEvent.track = EventRestAPI.Instance.currentEvent.description.track;
+        }
+        if (EventRestAPI.Instance.currentEvent.track != null)
+        {
+            trackData dat = EventRestAPI.Instance.currentEvent.track;
+
+            float dsin = Mathf.Sin(dat.zen_rad);
+            float dcos = Mathf.Cos(dat.zen_rad);
+            float rsin = Mathf.Sin(-dat.azi_rad);
+            float rcos = Mathf.Cos(-dat.azi_rad);
+            //Debug.LogFormat("ds:{0} dc:{1} rs:{2} rc:{3}",dsin,dcos,rsin,rcos);
+            //////////////////////////////x/////////z//////////y/////
+            Vector3 forw = new Vector3(dcos * rsin, -dcos * rcos, dsin);
+            //earth-relative direction, i think ^^
+
+            //south pole: 0 -2; 0;
+            /// celestial sphere: radius 5 local
+            float erad = 2.0f;
+            float crad = 5.0f;
+            Vector3 spole = new Vector3(0, -erad, 0);
+            float a = forw.sqrMagnitude;
+            float b = 2 * (spole.x * forw.x + spole.y * forw.y + spole.z * forw.z);
+            float c = spole.sqrMagnitude - crad * crad;
+            float det = Mathf.Sqrt(b * b - 4 * a * c);
+            float sol = (-b + det) / (2 * a);
+            Vector3 from = spole + forw * sol;
+
+            float cdsin = Mathf.Sin(dat.dec_rad);
+            float cdcos = Mathf.Cos(dat.dec_rad);
+            float crsin = Mathf.Sin((float)dat.ra_rad);
+            float crcos = Mathf.Cos((float)dat.ra_rad);
+            Vector3 ft = new Vector3(from.x, from.z, from.y);
+            //dcos*rcos,dcos*rsin,dsin);
+            Vector3 to = (new Vector3(cdcos * crcos, cdcos * crsin, cdsin)).normalized * crad;
+            {
+                // earth.gameObject.transform.localRotation = Quaternion.FromToRotation(from.normalized, to.normalized);
+                Quaternion q;
+                Vector3 a1 = Vector3.Cross(to.normalized, from.normalized);
+                q.x = a1.x;
+                q.y = a1.y;
+                q.z = a1.z;
+                q.w = 1 + Vector3.Dot(to.normalized, from.normalized);
+
+            }
+            epole.transform.localPosition = spole;
+            epole.transform.localRotation = Quaternion.LookRotation(forw);
+            indicator.transform.localRotation = Quaternion.LookRotation(from.normalized);
+            indicator.transform.localScale = new Vector3(0.05f, 0.05f, from.magnitude / 10);
+            epole.transform.localScale = new Vector3(0.05f, 0.05f, sol / 10);
+            // Debug.LogFormat("Sol: {0}",sol);
+            // Debug.LogFormat("From: {0}", from);
+            // Debug.LogFormat("res: {0}", a *sol*sol+b*sol+c);
+            // Debug.Log(forw);
+            // Debug.Log(to);
+            RotateAnim an = earth.GetComponent<RotateAnim>();
+            Quaternion erot = Quaternion.FromToRotation(from.normalized, to.normalized);
+            if (an != null)
+            {
+                an.SetRotation(erot);
+            }
+            else
+            {
+                earth.gameObject.transform.localRotation = erot;
+            }
+            // Debug.Log("^^^^^^");
+        }
+        else
+        {
+            if (epole != null)
+            {
+                epole.transform.localPosition = Vector3.zero;
+                epole.transform.localRotation = Quaternion.identity;
+                epole.transform.localScale = new Vector3(0.05f, 0.05f, 0.01f);
+            }
+        }
+    }
     public void updateForce() //event was updated... 
     {
         KeyValuePair<float, float> rng = getDefaultRange();
@@ -439,79 +521,9 @@ curEvent = new List<eventData>();
         if (timeController.value > rng.Value) timeController.SetValueWithoutNotify(rng.Value);
 
         updateToSet(true);
-        if(EventRestAPI.Instance.currentEvent.track !=null)
-        {
-            trackData dat = EventRestAPI.Instance.currentEvent.track;
- 
-            float dsin = Mathf.Sin(dat.zen_rad);
-            float dcos = Mathf.Cos(dat.zen_rad);
-            float rsin = Mathf.Sin(-dat.azi_rad);
-            float rcos = Mathf.Cos(-dat.azi_rad);
-            //Debug.LogFormat("ds:{0} dc:{1} rs:{2} rc:{3}",dsin,dcos,rsin,rcos);
-            //////////////////////////////x/////////z//////////y/////
-            Vector3 forw = new Vector3(dcos * rsin,  -dcos * rcos, dsin);
-            //earth-relative direction, i think ^^
+        updateTrackRot();
 
-            //south pole: 0 -2; 0;
-            /// celestial sphere: radius 5 local
-            float erad = 2.0f;
-            float crad = 5.0f;
-            Vector3 spole = new Vector3(0, -erad, 0);
-            float a = forw.sqrMagnitude;
-            float b = 2 * (spole.x*forw.x+spole.y*forw.y+spole.z*forw.z);
-            float c = spole.sqrMagnitude - crad * crad;
-            float det = Mathf.Sqrt(b*b-4*a*c);
-            float sol = (-b + det) / (2 * a);
-            Vector3 from = spole + forw * sol;
-          
-            float cdsin = Mathf.Sin(dat.dec_rad );
-            float cdcos = Mathf.Cos(dat.dec_rad );
-            float crsin = Mathf.Sin((float)dat.ra_rad );
-            float crcos = Mathf.Cos((float)dat.ra_rad);
-            Vector3 ft = new Vector3(from.x,from.z,from.y);
-            //dcos*rcos,dcos*rsin,dsin);
-            Vector3 to = ( new Vector3(   cdcos * crcos, cdcos * crsin, cdsin)).normalized*crad;
-            {
-               // earth.gameObject.transform.localRotation = Quaternion.FromToRotation(from.normalized, to.normalized);
-                Quaternion q;
-                Vector3 a1 = Vector3.Cross(to.normalized, from.normalized);
-                q.x= a1.x;
-                q.y = a1.y;
-                q.z = a1.z;
-                q.w = 1 + Vector3.Dot(to.normalized, from.normalized);
-              
-            }
-            epole.transform.localPosition = spole;
-            epole.transform.localRotation = Quaternion.LookRotation(forw);
-            indicator.transform.localRotation = Quaternion.LookRotation(from.normalized) ;
-            indicator.transform.localScale = new Vector3(0.05f, 0.05f, from.magnitude / 10);
-            epole.transform.localScale = new Vector3(0.05f, 0.05f, sol/10);
-            // Debug.LogFormat("Sol: {0}",sol);
-            // Debug.LogFormat("From: {0}", from);
-            // Debug.LogFormat("res: {0}", a *sol*sol+b*sol+c);
-            // Debug.Log(forw);
-            // Debug.Log(to);
-            RotateAnim an = earth.GetComponent<RotateAnim>();
-            Quaternion erot= Quaternion.FromToRotation(from.normalized, to.normalized);
-            if (an != null)
-            {
-                an.SetRotation(erot);
-            }
-            else
-            {
-                earth.gameObject.transform.localRotation = erot;
-            }
-          // Debug.Log("^^^^^^");
-        }
-        else
-        {
-            if(epole!=null)
-            {
-                epole.transform.localPosition = Vector3.zero;
-                epole.transform.localRotation = Quaternion.identity;
-                epole.transform.localScale = new Vector3(0.05f, 0.05f, 0.01f);
-            }
-        }
+
     }
     public static KeyValuePair<float, float> getDefaultRange()
     {
@@ -605,6 +617,7 @@ curEvent = new List<eventData>();
             tgap = deltaController.value;
         }
         if (nsld == prevSld &&beforeBalls!=null&&!force) return;
+      
         if(beforeBalls!=null)
         {
             foreach(ballIntegratedData id in beforeBalls)
@@ -684,6 +697,10 @@ curEvent = new List<eventData>();
                 //EventRestAPI.Instance.currentEvent.sav
                 //   Debug.Log("Forcing track ");
             }
+        }
+        if (force)
+        {
+            Debug.Log("Force updating");
         }
         float t1 = EventRestAPI.Instance.currentEvent.maxPureTime;
         float t0 = EventRestAPI.Instance.currentEvent.minPureTime;
