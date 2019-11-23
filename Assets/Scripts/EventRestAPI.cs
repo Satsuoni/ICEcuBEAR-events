@@ -63,6 +63,8 @@ public class eventDesc
     public string eventDate;
     [Key(5)]
     public string humName = null;
+    [Key(6)]
+    public trackData track = null;
     public bool tryLoadFromArray(JSONNode arr)
     {
         if (arr.Count < 3) return false;
@@ -71,6 +73,7 @@ public class eventDesc
             baseDesc = (string)arr[2];
             evn = (Int64)arr[1];
             run = (Int64)arr[0];
+
             if (arr.Count > 3)
             {
                 energy = arr[3];
@@ -79,6 +82,18 @@ public class eventDesc
             if (arr.Count > 5)
             {
                 humName = arr[5];
+            }
+            if(arr.Count>6)
+            {
+                if (arr[6].IsArray)
+                {
+                    track = trackData.getFromArray(arr[6]);
+                }
+                else if (arr[6].IsObject)
+                {
+
+                    track = trackData.getFromObject(arr[6]);
+                }
             }
         }
         catch(Exception )
@@ -476,13 +491,19 @@ public class eventList
 
 public class PrimCache<id,t>
 {
-    UInt32 maxItems = 20;
+    UInt32 maxItems = 50;
     public void setMaxItems(UInt32 mi)
     {
         maxItems = mi;
     }
     Dictionary<id, t> index = new Dictionary<id, t>();
     Queue<id> order = new Queue<id>();
+    public t GetFirstData()
+    {
+        if (order == null || order.Count == 0) return default(t);
+        return index[order.Peek()];
+
+    }
     public bool checkCache(id idn)
     {
         return index.ContainsKey(idn);
@@ -1379,6 +1400,15 @@ public class EventRestAPI : MonoBehaviour
         yield return StartCoroutine(runFullUpdate());
         //7.Download files and process files to fill up settings quota.
         _lifecycleReady = true;
+        if(expectedNextEvent.Key==-1)
+        {
+            fullEventData first = cache.GetFirstData();
+            if(first!=null)
+            {
+                expectedNextEvent= new evId(first.description.run, first.description.evn);
+                assignExpected();
+            }
+        }
         yield return StartCoroutine(fillOutFiles());
         //8. Prune excess files (save json after every step)  -done in above
     }
@@ -1609,7 +1639,10 @@ public class EventRestAPI : MonoBehaviour
         if (expectedNextEvent.Key == -1) return;
         if (!cache.checkCache(expectedNextEvent)) return;
         fullEventData dat = cache.getItem(expectedNextEvent);
-      
+        if (dat.description.track!=null&&dat.track==null)
+            {
+            dat.track = dat.description.track;
+        }
         if (dat == null) return;
         if(dat.track==null)
         {
