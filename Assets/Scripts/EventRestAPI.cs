@@ -1400,17 +1400,26 @@ public class EventRestAPI : MonoBehaviour
         yield return StartCoroutine(runFullUpdate());
         //7.Download files and process files to fill up settings quota.
         _lifecycleReady = true;
-        if(expectedNextEvent.Key==-1)
-        {
-            fullEventData first = cache.GetFirstData();
-            if(first!=null)
-            {
-                expectedNextEvent= new evId(first.description.run, first.description.evn);
-                assignExpected();
-            }
-        }
+  
         yield return StartCoroutine(fillOutFiles());
         //8. Prune excess files (save json after every step)  -done in above
+        Debug.Log("Ending Lifecycle!");
+        if (expectedNextEvent.Key == -1)
+        {
+            fullEventData first = cache.GetFirstData();
+
+            if (first != null)
+            {
+                expectedNextEvent = new evId(first.description.run, first.description.evn);
+                Debug.LogFormat("Assigning first event {0}", first.description.run);
+                assignExpected();
+            }
+            else
+            {
+                Debug.LogFormat("Not assigning first event");
+
+            }
+        }
     }
 
     public void demandFullUpdate()

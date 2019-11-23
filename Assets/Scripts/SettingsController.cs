@@ -68,7 +68,7 @@ public class SettingsController : MonoBehaviour
     bool open = false;
     float cp =0;
 
-    public void clickedButton()
+    public void Button()
     {
         if(!ready)
         {
