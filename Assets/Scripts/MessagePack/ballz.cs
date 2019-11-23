@@ -301,6 +301,8 @@ namespace MessagePack.Formatters
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value.energy);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventDate, formatterResolver);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.humName, formatterResolver);
+            offset += formatterResolver.GetFormatterWithVerify<global::trackData>().Serialize(ref bytes, offset, value.track, formatterResolver);
+
             return offset - startOffset;
         }
 
@@ -322,7 +324,7 @@ namespace MessagePack.Formatters
             var __energy__ = default(double);
             var __eventDate__ = default(string);
             var __humName__ = default(string);
-
+            var __track__ = default(global::trackData);
             for (int i = 0; i < length; i++)
             {
                 var key = i;
@@ -347,6 +349,9 @@ namespace MessagePack.Formatters
                     case 5:
                         __humName__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
                         break;
+                    case 6:
+                        __track__ = formatterResolver.GetFormatterWithVerify<global::trackData>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
                         break;
@@ -363,6 +368,7 @@ namespace MessagePack.Formatters
             ____result.energy = __energy__;
             ____result.eventDate = __eventDate__;
             ____result.humName = __humName__;
+            ____result.track = __track__;
             return ____result;
         }
     }

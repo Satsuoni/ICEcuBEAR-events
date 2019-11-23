@@ -10,6 +10,7 @@ using System.Text;
 using System.Security.Cryptography;
 using AudioSynthesis.Bank;
 using AudioSynthesis.Bank.Patches;
+using SimpleJSON;
 
 [Serializable]
 public class singleBallList
@@ -148,6 +149,46 @@ public class trackData
     public float rec_z;
     [Key(8)]
     public float zen_rad; //local 
+
+    public static trackData getFromArray(JSONNode arr)
+    {
+        trackData ret = new trackData();
+        if (arr.Count < 9) return null;
+        ret.azi_rad = (float)arr[0];
+        ret.dec_rad = (float)arr[1];
+        ret.mjd = (double)arr[2];
+        ret.ra_rad = (double)arr[3];
+        ret.rec_t0 = (float)arr[4];
+        ret.rec_x = (float)arr[5];
+        ret.rec_y = (float)arr[6];
+        ret.rec_z = (float)arr[7];
+        ret.zen_rad = (float)arr[8];
+        return ret;   
+    }
+    public static trackData getFromObject(JSONNode obj)
+        {
+        trackData ret = new trackData();
+        if (obj.HasKey("azi_rad"))
+            ret.azi_rad = (float)obj["azi_rad"];
+        if (obj.HasKey("dec_rad"))
+            ret.dec_rad = (float)obj["dec_rad"];
+
+        if (obj.HasKey("mjd"))
+            ret.mjd = (double)obj["mjd"];
+        if (obj.HasKey("ra_rad"))
+            ret.ra_rad = (double)obj["ra_rad"];
+        if (obj.HasKey("rec_t0"))
+            ret.rec_t0 = (float)obj["rec_t0"];
+        if (obj.HasKey("rec_x"))
+            ret.rec_x = (float)obj["rec_x"];
+        if (obj.HasKey("rec_y"))
+            ret.rec_y = (float)obj["rec_y"];
+        if (obj.HasKey("rec_z"))
+            ret.rec_z = (float)obj["rec_z"];
+        if (obj.HasKey("zen_rad"))
+            ret.zen_rad = (float)obj["zen_rad"];
+        return ret;
+    }
 }
 [MessagePackObject]
 public class fullEventData
@@ -401,6 +442,7 @@ curEvent = new List<eventData>();
         if(EventRestAPI.Instance.currentEvent.track !=null)
         {
             trackData dat = EventRestAPI.Instance.currentEvent.track;
+ 
             float dsin = Mathf.Sin(dat.zen_rad);
             float dcos = Mathf.Cos(dat.zen_rad);
             float rsin = Mathf.Sin(-dat.azi_rad);
@@ -621,6 +663,10 @@ curEvent = new List<eventData>();
         beforeBalls = afterBalls;
         //track
         trackData track = null;
+        if (EventRestAPI.Instance.currentEvent.track == null)
+        {
+            EventRestAPI.Instance.currentEvent.track = EventRestAPI.Instance.currentEvent.description.track;
+        }
         if (EventRestAPI.Instance.currentEvent.track!=null)
         {
             track = EventRestAPI.Instance.currentEvent.track;
