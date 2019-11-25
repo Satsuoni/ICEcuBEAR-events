@@ -65,6 +65,8 @@ public class eventDesc
     public string humName = null;
     [Key(6)]
     public trackData track = null;
+    [Key(7)]
+    public string comment = null;
     public bool tryLoadFromArray(JSONNode arr)
     {
         if (arr.Count < 3) return false;
@@ -95,6 +97,10 @@ public class eventDesc
                     track = trackData.getFromObject(arr[6]);
                 }
             }
+            if (arr.Count > 7)
+            {
+                comment = arr[7];
+            }
         }
         catch(Exception )
         {
@@ -102,6 +108,51 @@ public class eventDesc
             return false;
         }
         return true;
+    }
+    public bool tryLoadingFromObject(JSONNode obj)
+    {
+
+        if (obj.HasKey("run"))
+            run = (int)obj["run"];
+        else return false;
+        if (obj.HasKey("event"))
+            evn = (int)obj["event"];
+        else return false;
+        if (obj.HasKey("alert_type"))
+            baseDesc = (string)obj["alert_type"];
+        if (obj.HasKey("e_nu"))
+            energy = (double)obj["e_nu"];
+        if (obj.HasKey("event_time"))
+            eventDate = (string)obj["event_time"];
+        if (obj.HasKey("nickname"))
+            humName = (string)obj["nickname"];
+        else humName = null;
+        if (obj.HasKey("comment"))
+            comment = (string)obj["comment"];
+        else comment = null;
+
+        if (obj.HasKey("track"))
+        {
+            if (obj["track"].IsObject)
+                track = trackData.getFromObject(obj["track"]);
+            else
+                if (obj["track"].IsArray)
+            {
+                track = trackData.getFromArray(obj["track"]);
+            }
+            else
+                track = null;
+        }
+        else
+        {
+            if(obj.HasKey("ra_rad"))
+            {
+                track = trackData.getFromObject(obj);
+            }
+        }
+                  
+            
+        return true; 
     }
     public static Regex getProposedCSVMatch()
     {
@@ -782,7 +833,7 @@ public class EventRestAPI : MonoBehaviour
     }
     public static string mainURL = "https://ar.obolus.com";
     public static string eventCounter = "nevents";
-    public static string lastEvents = "lastevents";
+    public static string lastEvents = "lasteventsv2";
     public static string lastEventsBefore = "lasteventsbeforeid";
     public static string efile = "eventfile";
     public static string commentsUrl = "comment";
@@ -1080,6 +1131,10 @@ public class EventRestAPI : MonoBehaviour
                     {
                         eventDesc ed = new eventDesc();
                         if (ed.tryLoadFromArray(eda.Value))
+                        {
+                            lastEventList.Add(ed);
+                        }
+                        else if (ed.tryLoadingFromObject(eda.Value))
                         {
                             lastEventList.Add(ed);
                         }
@@ -1489,11 +1544,18 @@ public class EventRestAPI : MonoBehaviour
         foreach(SavedEventData dat in settings.eventData)
         {
             evId evid = new evId(dat.description.run,dat.description.evn);
-            yield return StartCoroutine(getComment(evid));
-            if(gotComment==true&& comment!=null)
+            if (dat.description.comment != null)
             {
-                dat.comment = (string)comment.Clone();
-                upd = true;
+                dat.comment = dat.description.comment;
+            }
+            else
+            {
+                yield return StartCoroutine(getComment(evid));
+                if (gotComment == true && comment != null)
+                {
+                    dat.comment = (string)comment.Clone();
+                    upd = true;
+                }
             }
         }
         if (upd) saveSettings();
