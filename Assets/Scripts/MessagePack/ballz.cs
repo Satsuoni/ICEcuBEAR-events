@@ -191,7 +191,7 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 9);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 11);
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.azi_rad);
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.dec_rad);
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value.mjd);
@@ -201,6 +201,8 @@ namespace MessagePack.Formatters
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.rec_y);
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.rec_z);
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.zen_rad);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.angle_err_50);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.angle_err_90);
             return offset - startOffset;
         }
 
@@ -225,6 +227,8 @@ namespace MessagePack.Formatters
             var __rec_y__ = default(float);
             var __rec_z__ = default(float);
             var __zen_rad__ = default(float);
+            var __angle_err_50__ = default(float);
+            var __angle_err_90__ = default(float);
 
             for (int i = 0; i < length; i++)
             {
@@ -259,6 +263,12 @@ namespace MessagePack.Formatters
                     case 8:
                         __zen_rad__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
                         break;
+                    case 9:
+                        __angle_err_50__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
+                    case 10:
+                        __angle_err_90__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
+                        break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
                         break;
@@ -278,6 +288,8 @@ namespace MessagePack.Formatters
             ____result.rec_y = __rec_y__;
             ____result.rec_z = __rec_z__;
             ____result.zen_rad = __zen_rad__;
+            ____result.angle_err_50 = __angle_err_50__;
+            ____result.angle_err_90 = __angle_err_90__;
             return ____result;
         }
     }
@@ -294,7 +306,7 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 7);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedArrayHeaderUnsafe(ref bytes, offset, 8);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.run);
             offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.evn);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.baseDesc, formatterResolver);
@@ -302,6 +314,7 @@ namespace MessagePack.Formatters
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.eventDate, formatterResolver);
             offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.humName, formatterResolver);
             offset += formatterResolver.GetFormatterWithVerify<global::trackData>().Serialize(ref bytes, offset, value.track, formatterResolver);
+            offset += formatterResolver.GetFormatterWithVerify<string>().Serialize(ref bytes, offset, value.comment, formatterResolver);
             return offset - startOffset;
         }
 
@@ -324,6 +337,7 @@ namespace MessagePack.Formatters
             var __eventDate__ = default(string);
             var __humName__ = default(string);
             var __track__ = default(global::trackData);
+            var __comment__ = default(string);
 
             for (int i = 0; i < length; i++)
             {
@@ -352,6 +366,9 @@ namespace MessagePack.Formatters
                     case 6:
                         __track__ = formatterResolver.GetFormatterWithVerify<global::trackData>().Deserialize(bytes, offset, formatterResolver, out readSize);
                         break;
+                    case 7:
+                        __comment__ = formatterResolver.GetFormatterWithVerify<string>().Deserialize(bytes, offset, formatterResolver, out readSize);
+                        break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
                         break;
@@ -369,6 +386,7 @@ namespace MessagePack.Formatters
             ____result.eventDate = __eventDate__;
             ____result.humName = __humName__;
             ____result.track = __track__;
+            ____result.comment = __comment__;
             return ____result;
         }
     }

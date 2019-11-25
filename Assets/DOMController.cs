@@ -149,7 +149,16 @@ public class trackData
     public float rec_z;
     [Key(8)]
     public float zen_rad; //local 
+    [Key(9)]
+    public float angle_err_50;
+    [Key(10)]
+    public float angle_err_90;
+    public trackData()
+    {
+        angle_err_50 = -1;
+        angle_err_90 = -1;
 
+    }
     public static trackData getFromArray(JSONNode arr)
     {
         trackData ret = new trackData();
@@ -163,6 +172,11 @@ public class trackData
         ret.rec_y = (float)arr[6];
         ret.rec_z = (float)arr[7];
         ret.zen_rad = (float)arr[8];
+        if(arr.Count>=11)
+        {
+            ret.angle_err_50 = (float)arr[9];
+            ret.angle_err_90 = (float)arr[10];
+        }
         return ret;   
     }
     public static trackData getFromObject(JSONNode obj)
@@ -187,6 +201,11 @@ public class trackData
             ret.rec_z = (float)obj["rec_z"];
         if (obj.HasKey("zen_rad"))
             ret.zen_rad = (float)obj["zen_rad"];
+        if (obj.HasKey("angle_err_50"))
+            ret.angle_err_50 = (float)obj["angle_err_50"];
+        if (obj.HasKey("angle_err_90"))
+            ret.angle_err_90 = (float)obj["angle_err_90"];
+
         return ret;
     }
 }
