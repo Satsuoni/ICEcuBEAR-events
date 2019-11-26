@@ -833,7 +833,7 @@ public class EventRestAPI : MonoBehaviour
     }
     public static string mainURL = "https://ar.obolus.com";
     public static string eventCounter = "nevents";
-    public static string lastEvents = "lasteventsv2";
+    public static string lastEvents = "lasteventswithtracks";
     public static string lastEventsBefore = "lasteventsbeforeid";
     public static string efile = "eventfile";
     public static string commentsUrl = "comment";

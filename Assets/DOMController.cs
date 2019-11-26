@@ -451,7 +451,9 @@ curEvent = new List<eventData>();
     List<ballIntegratedData> beforeBalls = null;
     void updateTrackRot()
     {
-        if(EventRestAPI.Instance.currentEvent.track==null&& EventRestAPI.Instance.currentEvent.description.track!=null)
+        if (EventRestAPI.Instance == null) return;
+        if (EventRestAPI.Instance.currentEvent == null) return;
+        if (EventRestAPI.Instance.currentEvent.track==null&& EventRestAPI.Instance.currentEvent.description.track!=null)
         {
             EventRestAPI.Instance.currentEvent.track = EventRestAPI.Instance.currentEvent.description.track;
         }
@@ -526,6 +528,16 @@ curEvent = new List<eventData>();
                 epole.transform.localPosition = Vector3.zero;
                 epole.transform.localRotation = Quaternion.identity;
                 epole.transform.localScale = new Vector3(0.05f, 0.05f, 0.01f);
+            }
+            RotateAnim an = earth.GetComponent<RotateAnim>();
+            Quaternion erot = Quaternion.identity;
+            if (an != null)
+            {
+                an.SetRotation(erot);
+            }
+            else
+            {
+                earth.gameObject.transform.localRotation = erot;
             }
         }
     }
