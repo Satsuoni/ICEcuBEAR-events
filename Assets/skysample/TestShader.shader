@@ -72,6 +72,15 @@
 		float da = angl / maxangl;
 		return step(angl, maxangl)*base*(1 - da);
 	}
+	float reddiness(float3 coords, float3 vert, float2 clr)
+	{
+		//clr.x is flux and clr.y is potentially hue/redshift, nothing now...
+		float df = dot(coords, normalize(vert));
+		float angl = 2 * (1 - df);
+		
+		
+		return angl *clr.x;
+	}
 
 	fixed4 frag(v2f i) : SV_Target{
 		//fixed4 c = tex2D(_MainTex, i.uv);
@@ -84,7 +93,7 @@
 		v1.y = 0;
 		v1.z = (i.uv.y - deg * 0.5) * 4 - 1;
 		v1.y = (1 - deg * 2)*sqrt(1 - dot(v1.xz, v1.xz));
-
+		
 		float3 v2;
 		deg = step(0.5, i.uv1.y);
 		v2.x = i.uv1.x;
@@ -103,8 +112,10 @@
 		float3 clr1 = colorFromDist(coords, v1, i.uv.zw);
 		float3 clr2 = colorFromDist(coords, v2, i.uv1.zw);
 		float3 clr3 = colorFromDist(coords, v3, i.uv2.zw);
+		
 		float4 c;
 		c.rgb= max(clr1, max(clr2, clr3));
+
 		c.a = 1;
 	//c = c * step(0.1, length(c.rgb)/3.0);
 	//c.rgb = 1;// clamp(dot(i.worldNormal, normalize(_WorldSpaceCameraPos - i.worldPos)), 0, 1);//mul(UNITY_MATRIX_V, i.worldNormal);

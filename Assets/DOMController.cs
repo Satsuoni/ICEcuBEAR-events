@@ -129,7 +129,7 @@ public class ballIntegratedData
     }
 }
 [MessagePackObject]
-public class trackData
+public class trackData :IEquatable<trackData>
 {
     [Key(0)]
     public float azi_rad; //local azimuth
@@ -153,6 +153,26 @@ public class trackData
     public float angle_err_50;
     [Key(10)]
     public float angle_err_90;
+
+
+    public bool Equals(trackData other)
+    {
+        if (this == null && other == null) return true;
+        if (other == null) return false;
+        if (azi_rad != other.azi_rad) return false;
+        if (dec_rad != other.dec_rad) return false;
+        if (mjd != other.mjd) return false;
+        if (ra_rad != other.ra_rad) return false;
+        if (rec_t0 != other.rec_t0) return false;
+        if (rec_x != other.rec_x) return false;
+        if (rec_y != other.rec_y) return false;
+        if (rec_z != other.rec_z) return false;
+        if (zen_rad != other.zen_rad) return false;
+        if (angle_err_50 != other.angle_err_50) return false;
+        if (angle_err_90 != other.angle_err_90) return false;
+
+        return true;
+    }
     public trackData()
     {
         angle_err_50 = -1;

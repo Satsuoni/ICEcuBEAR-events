@@ -49,7 +49,7 @@ public class Utilz
     }
 }
 [Serializable,MessagePackObject]
-public class eventDesc
+public class eventDesc :IEquatable<eventDesc>
 {
     [Key(0)]
     public Int64 run;
@@ -67,6 +67,34 @@ public class eventDesc
     public trackData track = null;
     [Key(7)]
     public string comment = null;
+
+    public bool Equals(eventDesc other)
+    {
+        if (other == null) return false;
+        if (run != other.run) return false;
+        if (evn != other.evn) return false;
+        if (baseDesc != other.baseDesc) return false;
+        if (energy != other.energy) return false;
+        if (eventDate != other.eventDate) return false;
+        if (humName != other.humName) return false;
+        if (comment != other.comment) return false;
+        if (track == null && other.track != null) return false;
+        if (track != null && other.track == null) return false;
+        if(track!=null&&other.track!=null)
+        {
+            if (!track.Equals(other.track)) return false;
+        }
+        return true;
+    }
+    public bool tryLoadFromNode(JSONNode node)
+    {
+        if (node.IsArray)
+            return this.tryLoadFromArray(node);
+        if (node.IsObject)
+            return this.tryLoadingFromObject(node);
+        return false;
+    }
+    
     public bool tryLoadFromArray(JSONNode arr)
     {
         if (arr.Count < 3) return false;
@@ -834,7 +862,7 @@ public class EventRestAPI : MonoBehaviour
     public static string mainURL = "https://ar.obolus.com";
     public static string eventCounter = "nevents";
     public static string lastEvents = "lasteventswithtracks";
-    public static string lastEventsBefore = "lasteventsbeforeid";
+    public static string lastEventsBefore = "lasteventsbeforeidwithtracks";
     public static string efile = "eventfile";
     public static string commentsUrl = "comment";
 
@@ -1130,14 +1158,12 @@ public class EventRestAPI : MonoBehaviour
                     foreach (var eda in el["events"])
                     {
                         eventDesc ed = new eventDesc();
-                        if (ed.tryLoadFromArray(eda.Value))
+                       // Debug.Log(eda.Value);
+                        if (ed.tryLoadFromNode(eda.Value))
                         {
                             lastEventList.Add(ed);
                         }
-                        else if (ed.tryLoadingFromObject(eda.Value))
-                        {
-                            lastEventList.Add(ed);
-                        }
+                      
 
                     }
 
@@ -1248,10 +1274,14 @@ public class EventRestAPI : MonoBehaviour
                     foreach (var eda in el["events"])
                     {
                         eventDesc ed = new eventDesc();
-                        if (ed.tryLoadFromArray(eda.Value))
+
+
+                        if (ed.tryLoadFromNode(eda.Value))
                         {
                             lastEventList.Add(ed);
                         }
+                       
+
                     }
                     Debug.LogFormat("Got events... {0} {1}", el["events"].Count,lastEventList.Count);
                     gotLastBefore = true;
@@ -1579,7 +1609,7 @@ public class EventRestAPI : MonoBehaviour
                 bool upd = false;
                 foreach (eventDesc ev in lastEventList)
                 {
-                    
+                    Debug.Log(ev.track);
                     evId eid = new evId(ev.run, ev.evn);
                     if (!updCheck.Contains(eid))
                     {
@@ -1601,9 +1631,15 @@ public class EventRestAPI : MonoBehaviour
                     }
                     else
                     {
-                        if(ev.humName!=null&&savedIndex[eid].description.humName==null)
+                        if( (ev.humName!=null&&savedIndex[eid].description.humName==null) )
                         {
                             savedIndex[eid].description.humName = ev.humName;
+                            upd = true;
+                        }
+                        if(!ev.Equals(savedIndex[eid].description))
+                        {
+                            Debug.LogFormat("Track: {0}", ev.track);
+                            savedIndex[eid].description = ev;
                             upd = true;
                         }
                     }
@@ -1744,6 +1780,10 @@ public class EventRestAPI : MonoBehaviour
             if (savedIndex.TryGetValue(expectedNextEvent, out edat))
             {
                 _curComment = edat.comment;
+                if(!edat.description.Equals(dat.description))
+                {
+                    dat.description = edat.description;
+                }
 
             }
             Utilz.UpdateCurEvent();
