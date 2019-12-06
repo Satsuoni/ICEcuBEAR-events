@@ -10839,6 +10839,11 @@ PrefabInstance:
       propertyPath: indicator
       value: 
       objectReference: {fileID: 7191347373417050799}
+    - target: {fileID: 1343777582083902190, guid: 5dbebd756980a1a499b6b45679908352,
+        type: 3}
+      propertyPath: fluxball
+      value: 
+      objectReference: {fileID: 3631386497080171844}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5dbebd756980a1a499b6b45679908352, type: 3}
 --- !u!1 &892438516511214797 stripped

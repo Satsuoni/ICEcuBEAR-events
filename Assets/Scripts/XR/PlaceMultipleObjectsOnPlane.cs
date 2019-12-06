@@ -97,21 +97,35 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
             }
         }
     }
+    bool prev1 = false;
+    public delegate void SlideAction(Vector2 shft);
+    public static event SlideAction FingerSliding;
     void ZoomUpdate()
     {
         if(Input.touchCount==1)
         {
             if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
             {
+                prev1 = false;
                 return;
             }
             if(zoom!=null)
             {
                 zoom.Show();
             }
+            if(prev1)
+            {
+                Touch touchZero = Input.GetTouch(0);
+                Vector2 dlt = touchZero.deltaPosition;
+                FingerSliding(dlt);
+            }
+            prev1 = true;
         }
+        if (Input.touchCount != 1)
+            prev1 = false;
         if (Input.touchCount == 2)
         {
+            
             // Store both touches.
             Touch touchZero = Input.GetTouch(0);
             Touch touchOne = Input.GetTouch(1);
