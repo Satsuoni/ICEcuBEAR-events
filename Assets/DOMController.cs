@@ -294,6 +294,7 @@ public class DOMController : MonoBehaviour
     public GameObject earth;
     public GameObject epole;
     public GameObject indicator;
+    public GameObject fluxball;
     void Start()
     {
         ftrack.eid = new KeyValuePair<int, int>(132974, 67924813);
@@ -395,10 +396,30 @@ curEvent = new List<eventData>();
     void Awake()
     {
         Utilz.currentEventUpdated += updateForce;
+        PlaceMultipleObjectsOnPlane.FingerSliding += SlideRotate;
         Debug.Log("Nyanya");
        
     }
-
+    public void  SlideRotate(Vector2 vct)
+    {
+        if(fluxball!=null)
+        {
+            float scrn = Mathf.Min(Screen.width, Screen.height);
+            vct /= scrn;
+            Vector3 angles = fluxball.transform.localEulerAngles;
+            if (Mathf.Abs(vct.x)>0.01f)
+            {
+               
+                angles.y+=120 * vct.x;
+            }
+             if(Mathf.Abs(vct.y)>0.01f)
+            {
+               
+                angles.z += 120 * vct.y;
+            }
+            fluxball.transform.localEulerAngles = angles;
+        }
+    }
     void StartedPlaying()
     {
 
@@ -416,6 +437,7 @@ curEvent = new List<eventData>();
     void OnDestroy()
     {
         Utilz.currentEventUpdated -= updateForce;
+        PlaceMultipleObjectsOnPlane.FingerSliding -= SlideRotate;
     }
     public void registerStringId(int id)
     {
@@ -522,8 +544,8 @@ curEvent = new List<eventData>();
             epole.transform.localPosition = spole;
             epole.transform.localRotation = Quaternion.LookRotation(forw);
             indicator.transform.localRotation = Quaternion.LookRotation(from.normalized);
-            indicator.transform.localScale = new Vector3(0.05f, 0.05f, from.magnitude / 10);
-            epole.transform.localScale = new Vector3(0.05f, 0.05f, sol / 10);
+            indicator.transform.localScale = new Vector3(0.05f, 0.05f, from.magnitude / 7.3f);
+            epole.transform.localScale = new Vector3(0.05f, 0.05f, sol / 7.3f);
             // Debug.LogFormat("Sol: {0}",sol);
             // Debug.LogFormat("From: {0}", from);
             // Debug.LogFormat("res: {0}", a *sol*sol+b*sol+c);
