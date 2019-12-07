@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0.44657826, g: 0.49641263, b: 0.57481676, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2956,8 +2956,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.9578518, y: 0, z: 1.0040001, w: 0.08400001}
   portraitAnchor: {x: 0.92, y: -0.002, z: 1.0040001, w: 0.03770371}
-  landscapeOffset: {x: 0, y: 84.615974, z: 0, w: -84.615974}
-  portraitOffset: {x: -60, y: -395.12347, z: 0, w: 395.12347}
+  landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
+  portraitOffset: {x: -60, y: 0, z: 0, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &566398518
@@ -4926,8 +4926,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.90324074, y: 0.82755554, z: 0.9677593, w: 0.9638519}
   portraitAnchor: {x: 0.814, y: 0.90400004, z: 0.93200004, w: 0.9638519}
-  landscapeOffset: {x: -144.8855, y: 0, z: 144.8855, w: 0}
-  portraitOffset: {x: 501.30624, y: 0, z: -501.30624, w: 0}
+  landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
+  portraitOffset: {x: 0, y: 0, z: 0, w: 0}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &1003824538
@@ -7502,8 +7502,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPortrait: 0
-  landscapeAnchor: {x: 0, y: 0.28571427, z: 1, w: 0.28571427}
-  portraitAnchor: {x: 0, y: 0.28571427, z: 1, w: 0.28571427}
+  landscapeAnchor: {x: 0, y: 0, z: 0, w: 0}
+  portraitAnchor: {x: 0, y: 0, z: 0, w: 0}
   landscapeOffset: {x: 0, y: -25, z: 0, w: 25}
   portraitOffset: {x: 0, y: -50, z: 0, w: 50}
   landscapePivot: {x: 0.5, y: 0.5}
@@ -8155,8 +8155,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.11735186, y: 0.7226763, z: 0.157, w: 0.92420715}
   portraitAnchor: {x: 0.10138889, y: 0.7608918, z: 0.18052116, w: 0.8995962}
-  landscapeOffset: {x: -57.690147, y: -3.0000305, z: 57.690147, w: -0.000030517578}
-  portraitOffset: {x: 338.48755, y: 0, z: -338.48755, w: -13}
+  landscapeOffset: {x: 0, y: -3.0000305, z: 0, w: -0.000030517578}
+  portraitOffset: {x: 0, y: 0, z: 0, w: -13}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!1 &1639889979
@@ -8966,8 +8966,8 @@ MonoBehaviour:
   isPortrait: 0
   landscapeAnchor: {x: 0.21100001, y: 0.17500001, z: 0.82900006, w: 0.8475214}
   portraitAnchor: {x: 0.13852365, y: 0.143, z: 0.84254295, w: 0.87246287}
-  landscapeOffset: {x: -0.800329, y: 0, z: 0.800329, w: 0}
-  portraitOffset: {x: 40.859287, y: 15, z: -40.859287, w: -10}
+  landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
+  portraitOffset: {x: 0, y: 15, z: 0, w: -10}
   landscapePivot: {x: 0.5, y: 0.5}
   portraitPivot: {x: 0.5, y: 0.5}
 --- !u!114 &1815847061
@@ -10521,6 +10521,7 @@ MonoBehaviour:
   - {fileID: 1698979247}
   - {fileID: 1500612805}
   - {fileID: 989943875}
+  - {fileID: 1133642689}
   - {fileID: 1647457479}
   - {fileID: 590613929}
   - {fileID: 7827091928051291040}
@@ -10540,7 +10541,6 @@ MonoBehaviour:
   - {fileID: 648572193}
   - {fileID: 1687156746}
   - {fileID: 1320885798}
-  - {fileID: 1133642689}
   _isPortrait: 0
   me: {fileID: 223986510445908545}
 --- !u!4 &4430575445328289
