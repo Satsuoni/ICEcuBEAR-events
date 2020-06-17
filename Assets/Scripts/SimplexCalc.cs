@@ -622,6 +622,20 @@ public class WrappedRect
         left = new cassowary.Variable("left");
 
     }
+    public int DistToCanvas(RectTransform canvas)
+    {
+        if (linkedTransform == canvas) return 0;
+        int cnt = 0;
+        Transform k = linkedTransform.transform;
+        while (k!=null)
+        {
+            if (k.GetComponent<RectTransform>() == canvas)
+                return cnt;
+            cnt++;
+            k = k.parent;
+        }
+         return cnt;
+    }
     public cassowary.Expression getTermFromSide(rectSide side)
     {
         switch(side)
@@ -648,60 +662,86 @@ public class SimplexCalc : MonoBehaviour
     cassowary.SolverImpl solver = new cassowary.SolverImpl();
     HashSet<cassowary.Constraint> cset = new HashSet<cassowary.Constraint>();
     Vector2 prevScreen = Vector2.zero;
-    cassowary.Constraint ox = null;
-    cassowary.Constraint oy = null;
-
     // Start is called before the first frame update
     void updateScreenConstraints()
     {
         if (canvas == null) return;
-         if (prevScreen.x != 0)
-        {
 
-            try
-            {
-                solver.removeConstraint(ox);
-                solver.removeConstraint(oy);
-            }
-            catch
-            {
-                 
-            }
-        }
+        
+       
+        solver.addConstraint(cassowary.Constraint.Eq(vars[canvas].getTermFromSide(rectSide.Top), 0));
+        solver.addConstraint(cassowary.Constraint.Eq(vars[canvas].getTermFromSide(rectSide.Left), 0));
         cassowary.Constraint newx = cassowary.Constraint.Eq(vars[canvas].getTermFromSide(rectSide.Right), Screen.width);
         cassowary.Constraint newy = cassowary.Constraint.Eq(vars[canvas].getTermFromSide(rectSide.Bottom), Screen.height);
-        Debug.Log(newx);
-        Debug.Log(newy);
-        solver.addConstraint(newx);
-        solver.addConstraint(newy);
-        ox = newx;
-        oy = newy;
-        prevScreen = new Vector2(Screen.width,Screen.height);
+        try
+        {
+            solver.addConstraint(newx);
+        }
+        catch { }
+        try
+        {
+            solver.addConstraint(newy);
+        }
+        catch { }
 
+        prevScreen = new Vector2(Screen.width,Screen.height);
+        Debug.Log(prevScreen);
+        Debug.Log(Screen.width);
     }
     void Start()
     {
         if(canvas!=null&&!vars.ContainsKey(canvas))
         {
             vars[canvas] = new WrappedRect(canvas);
-            solver.addConstraint(cassowary.Constraint.Eq(vars[canvas].getTermFromSide(rectSide.Top), 0));
-            solver.addConstraint(cassowary.Constraint.Eq(vars[canvas].getTermFromSide(rectSide.Left), 0));
+         
         }
         if(Screen.width!=prevScreen.x)
         {
             updateScreenConstraints();
         }
     }
+    bool needs_rebuild = false;
 
+    void Rebuild()
+    {
+        solver.reset();
+       
+        if (canvas != null)
+        {
+            if ( !vars.ContainsKey(canvas))
+            {
+                vars[canvas] = new WrappedRect(canvas);
+            }
+            updateScreenConstraints();
+            SelfConstraint[] cons = canvas.gameObject.GetComponentsInChildren<SelfConstraint>();
+            foreach(SelfConstraint con in cons)
+            {
+                cassowary.Constraint st = con.getConstraint(vars);
+                solver.addConstraint(st);
+            }
+            foreach (UIConnection con in connections)
+            {
+                cassowary.Constraint st = con.getConstraint(vars);
+                solver.addConstraint(st);
+            }
+            solver.updateVariables();
+            needs_rebuild = true;
+        }
+
+}
     void OnValidate()
     {
         Debug.Log("validate");
+        Rebuild();
+        return;
         if (canvas != null && !vars.ContainsKey(canvas))
         {
             vars[canvas] = new WrappedRect(canvas);
             updateScreenConstraints();
         }
-        if (Screen.width != prevScreen.x)
+        solver.reset();
+        updateScreenConstraints();
+        if (Screen.width != prevScreen.x || Screen.height != prevScreen.y)
         {
             updateScreenConstraints();
         }
@@ -710,6 +750,7 @@ public class SimplexCalc : MonoBehaviour
         foreach (UIConnection con in connections)
         {
             cassowary.Constraint st = con.getConstraint(vars);
+            solver.addConstraint(st);
             Debug.Log(st);
 
             if (st == null) continue;
@@ -726,7 +767,7 @@ public class SimplexCalc : MonoBehaviour
         {
             try
             {
-                solver.removeConstraint(st);
+               // solver.removeConstraint(st);
             }
             catch(ArgumentException)
             {
@@ -738,28 +779,80 @@ public class SimplexCalc : MonoBehaviour
         {
             Debug.Log("New constraint");
 
-            solver.addConstraint(st);
+            //solver.addConstraint(st);
         }
         solver.updateVariables();
         foreach(var kv in vars)
         {
             Debug.Log(kv.Value.linkedTransform);
-            if (kv.Value.linkedTransform != canvas)
-            {
-                kv.Value.linkedTransform.offsetMax = Vector2.zero;
-                kv.Value.linkedTransform.offsetMin = Vector2.zero;
-                kv.Value.linkedTransform.anchorMax = new Vector2((float)kv.Value.right.value() / Screen.width, (float)kv.Value.bottom.value() / Screen.height);
-                kv.Value.linkedTransform.anchorMin = new Vector2((float)kv.Value.left.value() / Screen.width, (float)kv.Value.top.value() / Screen.height);
-            }
+           
             Debug.Log(kv.Value.left.value());
             Debug.Log(kv.Value.right.value());
+            Debug.Log(kv.Value.top.value());
             Debug.Log(kv.Value.bottom.value());
+            Debug.Log(Screen.height);
+            Debug.Log(kv.Value.linkedTransform.anchorMax);
         }
     }
-
+    public void triggerRebuild()
+    {
+        needs_rebuild = true;
+    }
     // Update is called once per frame
     void Update()
     {
-        
+        if (Screen.width != prevScreen.x || Screen.height != prevScreen.y)
+            needs_rebuild = true;
+        //
+        if (needs_rebuild)
+        {
+            Rebuild();
+            WrappedRect[] transfs = new WrappedRect[vars.Count];
+            vars.Values.CopyTo(transfs, 0);
+            Array.Sort<WrappedRect>(transfs, delegate (WrappedRect u1, WrappedRect u2)
+            {
+                return u1.DistToCanvas(canvas).CompareTo(u2.DistToCanvas(canvas));
+            });
+            foreach (var v in transfs)
+            {
+
+                if (v.linkedTransform != canvas)
+                {
+                    Vector3[] cor = new Vector3[4];
+                    RectTransform par = v.linkedTransform.parent.GetComponent<RectTransform>();
+                    if (par != null)
+                    {
+                        par.GetWorldCorners(cor);
+                    }
+                    else
+                    {
+                        canvas.GetWorldCorners(cor);
+                    }
+                    Debug.Log(cor[3]);
+                    Debug.Log(cor[2]);
+                    float wdth = cor[2].x - cor[0].x;
+                    float height = cor[2].y - cor[0].y;
+                    if (wdth == 0 || height == 0)
+                    { continue; }
+                    Debug.Log(wdth);
+                    Debug.Log(height);
+                    v.linkedTransform.offsetMax = new Vector2(0, 0);
+                    v.linkedTransform.offsetMin = Vector2.zero;
+                    v.linkedTransform.anchorMax = new Vector2((float)(v.right.value() - cor[0].x) / wdth, (float)(v.bottom.value() - cor[0].y) / height);
+                    v.linkedTransform.anchorMin = new Vector2((float)(v.left.value() - cor[0].x) / wdth, (float)(v.top.value() - cor[0].y) / height);
+                    Debug.Log(Screen.height);
+
+                    Debug.Log(v.linkedTransform);
+
+                    Debug.Log(v.left.value());
+                    Debug.Log(v.right.value());
+                    Debug.Log(v.top.value());
+                    Debug.Log(v.bottom.value());
+
+                }
+
+            }
+            needs_rebuild = false;
+        }
     }
 }

@@ -553,6 +553,7 @@ public class SolverImpl
 	*/
 	void optimize(  Row objective )
 	{
+            int cnt = 0;
 		while( true )
 		{
 			Symbol entering=new Symbol( getEnteringSymbol( objective ) );
@@ -567,9 +568,12 @@ public class SolverImpl
 			m_rows.Remove( leaving );
 			row.solveFor( leaving, entering );
 			substitute( entering, row );
-			m_rows[ entering ] = row;
+			m_rows[ entering ] = row; 
+                cnt++;
+                if (cnt > m_rows.Count * 2) break;
 		}
-	}
+            throw new System.ArgumentException("InternalSolverError: Too many iters", "SolverImpl");
+        }
 
 	/* Optimize the system using the dual of the simplex method.
 
