@@ -9,6 +9,7 @@ using UnityEngine.Profiling;
 public class Landscaper : MonoBehaviour
 {
     public Landscaped[] landscaped;
+    public SimplexCalc simplex;
     // Start is called before the first frame update
     RectTransform mine;
     [SerializeField]
@@ -36,6 +37,7 @@ public class Landscaper : MonoBehaviour
     }
     public void OnEnabled()
     {
+        simplex = FindObjectOfType<SimplexCalc>();
         landscaped = gameObject.GetComponentsInChildren<Landscaped>(true);
         mine = gameObject.GetComponent<RectTransform>();
         if(mine!=null)
@@ -86,7 +88,13 @@ public class Landscaper : MonoBehaviour
     }
     void OnRectTransformDimensionsChange()
     {
-       
+        if(simplex==null)
+        {
+            simplex = FindObjectOfType<SimplexCalc>();
+        }
+        Debug.LogFormat("Simplex {0}", simplex);
+        if (simplex != null)
+            simplex.triggerRebuild();
         landscaped = gameObject.GetComponentsInChildren<Landscaped>(true);
         if(mine==null)
          mine = gameObject.GetComponent<RectTransform>();
