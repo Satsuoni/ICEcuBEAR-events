@@ -13,15 +13,49 @@ public class SubstTrans
     public Vector2 portraitPivot = Landscaped.inv2;
     public Landscaped core;
 }
+[System.Serializable]
+public class Toggleable
+{
+    public GameObject togglecontainer;
+    public string nameOn="on";
+    public string nameOff="off";
+    ToggleContraint[] constraints=null;
+   public ToggleContraint [] getToggles()
+    {
+        if (togglecontainer == null)
+            return new ToggleContraint[0];
+
+        if(constraints==null)
+        {
+            constraints = togglecontainer.GetComponents<ToggleContraint>();
+        }
+        return constraints;
+    }
+    public void RefreshToggles()
+    {
+        if (togglecontainer == null)
+            return;
+        constraints = togglecontainer.GetComponents<ToggleContraint>();
+    }
+}
+
 
 public class HideUI : MonoBehaviour
 {
 
     public GameObject[] hidden=null;
     bool[] wasHidden=null;
-    public SubstTrans[] moved;
+    public Toggleable[] moved;
     bool _hidden = false;
-    public void Toggle()
+    void OnValidate()
+    {
+        foreach (Toggleable s in moved)
+        {
+            s.RefreshToggles();
+   }
+        return;
+    }
+        public void Toggle()
     {
         if(_hidden)
         { //unhide
@@ -40,28 +74,19 @@ public class HideUI : MonoBehaviour
                g.SetActive(false);
             }
         }
-        foreach(SubstTrans s in moved)
+        foreach(Toggleable s in moved)
         {
-     Vector4 landscapeAnchor = s.core.landscapeAnchor;
-     Vector4 portraitAnchor = s.core.portraitAnchor;
-     Vector4 landscapeOffset = s.core.landscapeOffset;
-     Vector4 portraitOffset = s.core.portraitOffset;
-     Vector2 landscapePivot = s.core.landscapePivot;
-     Vector2 portraitPivot = s.core.landscapePivot;
-            s.core.landscapeAnchor = s.landscapeAnchor;
-            s.core.portraitAnchor = s.portraitAnchor;
-            s.core.landscapeOffset = s.portraitOffset;
-            s.core.portraitOffset = s.portraitOffset;
-            s.core.landscapePivot = s.landscapePivot;
-            s.core.portraitPivot = s.portraitPivot;
-            s.landscapeAnchor = landscapeAnchor;
-            s.portraitAnchor = portraitAnchor;
-            s.landscapeOffset = landscapeOffset;
-            s.portraitOffset = portraitOffset;
-            s.landscapePivot = landscapePivot;
-            s.portraitPivot = portraitPivot;
-            s.core.Align();
-   }
+            ToggleContraint[] cns = s.getToggles();
+            if(cns!=null)
+            foreach (ToggleContraint cn in cns)
+            {
+                    if (_hidden)
+                        cn.ToggleByName(s.nameOn);
+                    else
+                        cn.ToggleByName(s.nameOff);
+
+                }
+        }
         _hidden = !_hidden;
     }
     // Start is called before the first frame update

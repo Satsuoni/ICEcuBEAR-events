@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(RectTransform))]
-public class SelfConstraint : MonoBehaviour
+public class SelfConstraint : MonoBehaviour, IUIConstraint
 {
     RectTransform first;
     public rectSide firstSide;
@@ -55,7 +55,6 @@ public class SelfConstraint : MonoBehaviour
                 f2 = new WrappedRect(second);
                 dct[second] = f2;
             }
-
             ex2 = f2.getTermFromSide(secondSide) * secondcoef;
         }
         else
@@ -65,17 +64,14 @@ public class SelfConstraint : MonoBehaviour
             case Relation.Equal:
                 {
                     return cassowary.Constraint.Eq(ex1 + freecoef, ex2) | cassowary.Strength.fromEnum(strength);
-
                 }
             case Relation.GreaterThan:
                 {
                     return cassowary.Constraint.Ge(ex1 + freecoef, ex2) | cassowary.Strength.fromEnum(strength);
-
                 }
             case Relation.LessThan:
                 {
                     return cassowary.Constraint.Le(ex1 + freecoef, ex2) | cassowary.Strength.fromEnum(strength);
-
                 }
         }
 
