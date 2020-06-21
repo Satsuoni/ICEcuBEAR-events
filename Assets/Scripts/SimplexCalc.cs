@@ -539,8 +539,12 @@ public enum Relation
     Equal=0,
     GreaterThan=1
 }
+public interface IUIConstraint
+{
+    cassowary.Constraint getConstraint(Dictionary<RectTransform, WrappedRect> dct);
+}
 [Serializable]
-public class UIConnection
+public class UIConnection: IUIConstraint
 {
     public RectTransform first;
     public rectSide firstSide;
@@ -662,6 +666,19 @@ public class SimplexCalc : MonoBehaviour
     cassowary.SolverImpl solver = new cassowary.SolverImpl();
     HashSet<cassowary.Constraint> cset = new HashSet<cassowary.Constraint>();
     Vector2 prevScreen = Vector2.zero;
+    public Dictionary<RectTransform, WrappedRect> getVarsDict()
+    {
+        return vars;
+    }
+    public bool addConstraint(cassowary.Constraint c)
+    {
+        try { Debug.Log(c); solver.addConstraint(c); needs_reassign = true;  return true; } catch { return false; }
+    }
+    public bool removeConstraint(cassowary.Constraint c)
+    {
+
+        try { Debug.Log(c);  solver.removeConstraint(c); needs_reassign = true;  return true; } catch { return false; }
+    }
     // Start is called before the first frame update
     void updateScreenConstraints()
     {
@@ -701,7 +718,7 @@ public class SimplexCalc : MonoBehaviour
         }
     }
     bool needs_rebuild = false;
-
+    bool needs_reassign = false;
     void Rebuild()
     {
         solver.reset();
@@ -713,16 +730,19 @@ public class SimplexCalc : MonoBehaviour
                 vars[canvas] = new WrappedRect(canvas);
             }
             updateScreenConstraints();
-            SelfConstraint[] cons = canvas.gameObject.GetComponentsInChildren<SelfConstraint>();
-            foreach(SelfConstraint con in cons)
+            IUIConstraint[] cons = canvas.gameObject.GetComponentsInChildren<IUIConstraint>();
+            foreach (IUIConstraint con in cons)
             {
                 cassowary.Constraint st = con.getConstraint(vars);
-                solver.addConstraint(st);
+                if (st == null) continue;
+                try { solver.addConstraint(st); } catch { }
+                
             }
+           
             foreach (UIConnection con in connections)
             {
                 cassowary.Constraint st = con.getConstraint(vars);
-                solver.addConstraint(st);
+                try { solver.addConstraint(st); } catch { }
             }
             solver.updateVariables();
             needs_rebuild = true;
@@ -807,6 +827,9 @@ public class SimplexCalc : MonoBehaviour
         if (needs_rebuild)
         {
             Rebuild();
+        }
+        if(needs_reassign ||needs_rebuild)
+        { 
             WrappedRect[] transfs = new WrappedRect[vars.Count];
             vars.Values.CopyTo(transfs, 0);
             Array.Sort<WrappedRect>(transfs, delegate (WrappedRect u1, WrappedRect u2)
@@ -828,31 +851,28 @@ public class SimplexCalc : MonoBehaviour
                     {
                         canvas.GetWorldCorners(cor);
                     }
-                    Debug.Log(cor[3]);
-                    Debug.Log(cor[2]);
+
                     float wdth = cor[2].x - cor[0].x;
                     float height = cor[2].y - cor[0].y;
                     if (wdth == 0 || height == 0)
                     { continue; }
-                    Debug.Log(wdth);
-                    Debug.Log(height);
+                    //Debug.Log(wdth);
+                    //Debug.Log(height);
                     v.linkedTransform.offsetMax = new Vector2(0, 0);
                     v.linkedTransform.offsetMin = Vector2.zero;
-                    v.linkedTransform.anchorMax = new Vector2((float)(v.right.value() - cor[0].x) / wdth, (float)(v.bottom.value() - cor[0].y) / height);
-                    v.linkedTransform.anchorMin = new Vector2((float)(v.left.value() - cor[0].x) / wdth, (float)(v.top.value() - cor[0].y) / height);
-                    Debug.Log(Screen.height);
+                    float proper_y = Screen.height- cor[1].y;
+                    v.linkedTransform.anchorMax = new Vector2((float)(v.right.value() - cor[0].x) / wdth, (float)(height +  proper_y -v.top.value() ) / height);
+                    v.linkedTransform.anchorMin = new Vector2((float)(v.left.value() - cor[0].x) / wdth, (float)(height + proper_y - v.bottom.value() ) / height);
+                    //Debug.LogFormat("Screen w:{0} h:{1}, tr: {2}, left: {3} right: {4} top: {5} bottom:{6}",Screen.width,Screen.height,v.linkedTransform,
+                        //v.left.value(), v.right.value(), v.top.value(), v.bottom.value());
+                    //Debug.LogFormat("Tr: {0} amin: {1} amax: {2} cor: {3} {4} {5} {6} proper:{7}",v.linkedTransform,v.linkedTransform.anchorMin,v.linkedTransform.anchorMax,cor[0],cor[1],cor[2],cor[3],proper_y);
 
-                    Debug.Log(v.linkedTransform);
-
-                    Debug.Log(v.left.value());
-                    Debug.Log(v.right.value());
-                    Debug.Log(v.top.value());
-                    Debug.Log(v.bottom.value());
 
                 }
 
             }
             needs_rebuild = false;
+            needs_reassign = false;
         }
     }
 }

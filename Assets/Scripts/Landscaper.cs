@@ -92,7 +92,7 @@ public class Landscaper : MonoBehaviour
         {
             simplex = FindObjectOfType<SimplexCalc>();
         }
-        Debug.LogFormat("Simplex {0}", simplex);
+      //  Debug.LogFormat("Simplex {0}",simplex);
         if (simplex != null)
             simplex.triggerRebuild();
         landscaped = gameObject.GetComponentsInChildren<Landscaped>(true);
