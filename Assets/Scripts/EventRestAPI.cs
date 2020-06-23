@@ -1001,7 +1001,7 @@ public class EventRestAPI : MonoBehaviour
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
             // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
+            //webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
            if (webRequest.isNetworkError|| webRequest.isHttpError)
             {
@@ -1078,7 +1078,7 @@ public class EventRestAPI : MonoBehaviour
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
             // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
+            //webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
             if (webRequest.isNetworkError || webRequest.isHttpError)
             {
@@ -1127,7 +1127,7 @@ public class EventRestAPI : MonoBehaviour
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
             // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
+           // webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
             if (webRequest.isNetworkError || webRequest.isHttpError)
             {
@@ -1243,7 +1243,7 @@ public class EventRestAPI : MonoBehaviour
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
             // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
+           // webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
             if (webRequest.isNetworkError || webRequest.isHttpError)
             {
@@ -1524,7 +1524,7 @@ public class EventRestAPI : MonoBehaviour
         using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
         {
             // Request and wait for the desired page.
-            webRequest.chunkedTransfer = false;
+           // webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
             if (webRequest.isNetworkError || webRequest.isHttpError)
             {
