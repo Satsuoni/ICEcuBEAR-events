@@ -5,11 +5,11 @@ using UnityEngine.UI;
 
 public class DropdownManager : MonoBehaviour
 {
-    Dropdown managed;
+    ColorDropdown managed;
     // Start is called before the first frame update
     void Start()
     {
-        managed = gameObject.GetComponent<Dropdown>();
+        managed = gameObject.GetComponent<ColorDropdown>();
         if(managed==null)
         {
             Destroy(this);
@@ -50,7 +50,7 @@ public class DropdownManager : MonoBehaviour
             return;
         }
         curOptions.Clear();
-        List<Dropdown.OptionData> lst = new List<Dropdown.OptionData>();
+        List<ColorDropdown.OptionData> lst = new List<ColorDropdown.OptionData>();
         if(EventRestAPI.settings==null)
         {
             Debug.Log("Nyanya NULL settings");
@@ -63,7 +63,7 @@ public class DropdownManager : MonoBehaviour
         }
         foreach (SavedEventData edat in EventRestAPI.settings.eventData)
         {
-            Dropdown.OptionData dopt = new Dropdown.OptionData();
+            ColorDropdown.OptionData dopt = new ColorDropdown.OptionData();
             //Debug.Log("Nyanya"+JsonUtility.ToJson(edat.description));
             dopt.image = null;
             if (edat.description.humName != null)
@@ -81,7 +81,7 @@ public class DropdownManager : MonoBehaviour
         //Debug.Log("Nyanya options");
         //Debug.Log("DropboxUpdate");
         if(managed==null)
-            managed = gameObject.GetComponent<Dropdown>();
+            managed = gameObject.GetComponent<ColorDropdown>();
         managed.options = lst;
         //managed.ClearOptions();
         //managed.AddOptions(lst);
@@ -90,7 +90,7 @@ public class DropdownManager : MonoBehaviour
     {
         
     }
-    void DropdownValueChanged(Dropdown change)
+    void DropdownValueChanged(ColorDropdown change)
     {
       
         if(change.value<curOptions.Count)

@@ -66,7 +66,7 @@ public class SolverImpl
 	public void addConstraint(  Constraint constraint )
 	{
 		if( m_cns.ContainsKey( constraint ) )
-			throw new System.ArgumentException("DuplicateConstraint", "SolverImpl");// constraint? 
+			throw new System.ArgumentException(string.Format("DuplicateConstraint: {0}",constraint), "SolverImpl");// constraint? 
 
 		// Creating a row causes symbols to be reserved for the variables
 		// in the constraint. If this method exits with an exception,

@@ -106,7 +106,7 @@ public class Landscaper : MonoBehaviour
        
     }
     // Update is called once per frame
-    DeviceOrientation old=DeviceOrientation.LandscapeLeft;
+   // DeviceOrientation old=DeviceOrientation.LandscapeLeft;
     Vector2 sz;
     ScreenOrientation so;
     Vector2 arage;
