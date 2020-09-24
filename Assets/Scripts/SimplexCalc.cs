@@ -660,6 +660,7 @@ public class WrappedRect
 [ExecuteInEditMode]
 public class SimplexCalc : MonoBehaviour
 {
+    public static SimplexCalc instance=null;
     public RectTransform canvas;
     public UIConnection[] connections;
     Dictionary<RectTransform, WrappedRect> vars=new Dictionary<RectTransform, WrappedRect>();
@@ -714,8 +715,10 @@ public class SimplexCalc : MonoBehaviour
         }
         if(Screen.width!=prevScreen.x)
         {
-            updateScreenConstraints();
+            Rebuild();
+         //   updateScreenConstraints();
         }
+        instance = this;
     }
     bool needs_rebuild = false;
     bool needs_reassign = false;
@@ -751,7 +754,7 @@ public class SimplexCalc : MonoBehaviour
 }
     void OnValidate()
     {
-        Debug.Log("validate");
+       // Debug.Log("validate");
         Rebuild();
         return;
         if (canvas != null && !vars.ContainsKey(canvas))
@@ -829,7 +832,16 @@ public class SimplexCalc : MonoBehaviour
             Rebuild();
         }
         if(needs_reassign ||needs_rebuild)
-        { 
+        {
+            Dictionary<RectTransform, WrappedRect> newVars = new Dictionary<RectTransform, WrappedRect>();
+            foreach(var e in vars)
+            {
+                if (e.Value.linkedTransform!=null)
+                {
+                    newVars.Add(e.Key, e.Value);
+                }
+            }
+            vars = newVars;
             WrappedRect[] transfs = new WrappedRect[vars.Count];
             vars.Values.CopyTo(transfs, 0);
             Array.Sort<WrappedRect>(transfs, delegate (WrappedRect u1, WrappedRect u2)

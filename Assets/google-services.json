@@ -30,6 +30,49 @@
             {
               "client_id": "539222775137-bce9aibkas8bpuad9mon2t6n3iset13q.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "539222775137-fst12o7pio8svpt6emvs74vdgr8hnkqn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "edu.wisc.icecube.icebear"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:539222775137:android:f86d4f1fce06f0e5db6120",
+        "android_client_info": {
+          "package_name": "edu.wisc.icecube.icebear"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "539222775137-bce9aibkas8bpuad9mon2t6n3iset13q.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMFFn0CIKtIHhrOQ-G0Pnm2o26x5tmiMg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "539222775137-bce9aibkas8bpuad9mon2t6n3iset13q.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "539222775137-fst12o7pio8svpt6emvs74vdgr8hnkqn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "edu.wisc.icecube.icebear"
+              }
             }
           ]
         }

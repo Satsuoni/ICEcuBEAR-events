@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>539222775137-9du5nrj4hltghg38ji7uhctkief276rm.apps.googleusercontent.com</string>
+	<string>539222775137-fst12o7pio8svpt6emvs74vdgr8hnkqn.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.539222775137-9du5nrj4hltghg38ji7uhctkief276rm</string>
+	<string>com.googleusercontent.apps.539222775137-fst12o7pio8svpt6emvs74vdgr8hnkqn</string>
 	<key>API_KEY</key>
 	<string>AIzaSyCOQDyZkYJU8Gnxd1dhty1SAKvE66_aLnY</string>
 	<key>GCM_SENDER_ID</key>
@@ -13,7 +13,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.icecube.icebear</string>
+	<string>edu.wisc.icecube.icebear</string>
 	<key>PROJECT_ID</key>
 	<string>icecubear-21644</string>
 	<key>STORAGE_BUCKET</key>
@@ -29,7 +29,7 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:539222775137:ios:9b57c34c3a3e7568</string>
+	<string>1:539222775137:ios:09bdb0cb1c0f58f4db6120</string>
 	<key>DATABASE_URL</key>
 	<string>https://icecubear-21644.firebaseio.com</string>
 </dict>
