@@ -19,6 +19,7 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
     GameObject m_PlacedPrefab;
 
     public ZoomFader zoom;
+    public GenericFader[] tower = new GenericFader[1];
     /// <summary>
     /// The prefab to instantiate on touch.
     /// </summary>
@@ -113,6 +114,11 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
             {
                 zoom.Show();
             }
+            if ( tower!=null)
+            foreach(GenericFader fd in tower)
+            {
+                    fd?.Show();
+            }
             if(prev1)
             {
                 Touch touchZero = Input.GetTouch(0);
@@ -144,6 +150,11 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
             if (zoom != null)
             {
                 zoom.Show();
+                if (tower != null)
+                    foreach (GenericFader fd in tower)
+                    {
+                        fd?.Show();
+                    }
                 zoom.UpdateZoom(deltaMagnitudeDiff/scrn);
             }
          
