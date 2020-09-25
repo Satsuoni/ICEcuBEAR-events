@@ -271,6 +271,7 @@ public class DOMController : MonoBehaviour
     Slider timeController;
     TimeSlider playbackController;
     Slider zoomControl;
+    Toggle towerControl;
     const int timeSpans = 2500;
     public Transform footPoint;
     public Transform footAlign;
@@ -295,6 +296,7 @@ public class DOMController : MonoBehaviour
     public GameObject epole;
     public GameObject indicator;
     public GameObject fluxball;
+    public GameObject tower;
     void Start()
     {
         ftrack.eid = new KeyValuePair<int, int>(132974, 67924813);
@@ -352,6 +354,16 @@ curEvent = new List<eventData>();
             if(zoomControl!=null)
             {
                 zoomControl.onValueChanged.AddListener(delegate { zoomChange(); });
+            }
+        }
+
+        GameObject tCon = GameObject.Find("towerToggle");
+        if (tCon != null)
+        {
+            towerControl = tCon.GetComponent<Toggle>();
+            if (towerControl != null)
+            {
+                towerControl.onValueChanged.AddListener(delegate { towerChange(); });
             }
         }
         foreach (singleBallList lst in ballArray)
@@ -853,7 +865,14 @@ curEvent = new List<eventData>();
     {
         updateToSet();
     }
-    public void zoomChange()
+    public void towerChange()
+    {
+        if (towerControl!=null&&tower!=null)
+        {
+            tower.SetActive(towerControl.isOn);
+        }
+    }
+        public void zoomChange()
     {
         if (zoomControl == null) return;
         float nzoom = zoomControl.value;
