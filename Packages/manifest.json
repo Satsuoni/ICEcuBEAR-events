@@ -1,5 +1,16 @@
 {
+  "scopedRegistries": [
+    {
+      "name": "Game Package Registry by Google",
+      "url": "https://unityregistry-pa.googleapis.com",
+      "scopes": [
+        "com.google"
+      ]
+    }
+  ],
   "dependencies": {
+    "com.google.external-dependency-manager": "1.2.159",
+    "com.google.firebase.messaging": "6.15.2",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.analytics": "3.3.5",
