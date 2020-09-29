@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -859,7 +859,7 @@ public class EventRestAPI : MonoBehaviour
 
         return true;
     }
-    public static string mainURL = "https://ar.obolus.com";
+    public static string mainURL = "https://ar.obolus.net";
     public static string eventCounter = "nevents";
     public static string lastEvents = "lasteventswithtracks";
     public static string lastEventsBefore = "lasteventsbeforeidwithtracks";
