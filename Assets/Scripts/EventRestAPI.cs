@@ -678,6 +678,16 @@ public class EventRestAPI : MonoBehaviour
     }
     public void UpdateLoading()
     {
+        if (loaderData.primaryCount > loaderData.counter)
+        {
+            loaderData.primaryCount = loaderData.counter;
+
+        }
+        if (loaderData.secondaryCount > loaderData.counter)
+        {
+            loaderData.secondaryCount = loaderData.counter;
+
+        }
         if (loading!=null)
         {
             if (loaderData.task==""||(loaderData.primaryCount==loaderData.counter&& loaderData.secondaryCount == loaderData.counter))
@@ -976,6 +986,8 @@ public class EventRestAPI : MonoBehaviour
         UpdateLoading();
         if (savedIndex.ContainsKey(evid))
         {
+            loaderData.task = "Reload data";
+            UpdateLoading();
             sdat = savedIndex[evid];
             if(sdat.hashname!=null)
             {
@@ -994,6 +1006,7 @@ public class EventRestAPI : MonoBehaviour
                             if (!loaderData.mainLifecycle)
                             {
                                 loaderData.primaryCount = 1;
+                                UpdateLoading();
                             }
                             _unlock(evid);//rAII is pain
                             yield break;
@@ -1023,6 +1036,8 @@ public class EventRestAPI : MonoBehaviour
                         { Debug.Log("Invalid csv hash"); csvText = null; }
                         else
                         csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
+                        loaderData.task = "Read csv data";
+                        UpdateLoading();
                     }
                     catch (Exception e)
                     {
@@ -1963,6 +1978,10 @@ public class EventRestAPI : MonoBehaviour
             assignExpected();
             yield break;
         }
+        loaderData.counter = 1;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Notification";
         yield return StartCoroutine(OptimisticUpdate());
         Debug.Log("oop");
         if (!cache.checkCache(evid))
@@ -1983,6 +2002,15 @@ public class EventRestAPI : MonoBehaviour
             //Debug.LogFormat("Potentially duplicate or preloaded event {0} / {1}",dsc.run,dsc.evn);
             assignExpected();
             yield break;
+        }
+        if (!loaderData.mainLifecycle)
+        {
+            loaderData.counter = 1;
+            loaderData.primaryCount = 0;
+            loaderData.secondaryCount = 0;
+            loaderData.curStatus = "Switch";
+            loaderData.curStatus = "Check";
+            UpdateLoading();
         }
         yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
 
