@@ -49,7 +49,7 @@ public class CToggle
     }
 }
 
-public class ToggleContraint : MonoBehaviour,IUIConstraint
+public class ToggleConstraint : MonoBehaviour,IUIConstraint
 {
     public int current=0;
     public CToggle[] toggles;
