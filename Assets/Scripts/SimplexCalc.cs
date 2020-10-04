@@ -662,6 +662,7 @@ public class SimplexCalc : MonoBehaviour
 {
     public static SimplexCalc instance=null;
     public RectTransform canvas;
+    public RectTransform safeArea;
     public UIConnection[] connections;
     Dictionary<RectTransform, WrappedRect> vars=new Dictionary<RectTransform, WrappedRect>();
     cassowary.SolverImpl solver = new cassowary.SolverImpl();
@@ -702,6 +703,30 @@ public class SimplexCalc : MonoBehaviour
         }
         catch { }
 
+        if (safeArea!=null)
+        {
+            if (!vars.ContainsKey(safeArea))
+            {
+                vars[safeArea] = new WrappedRect(safeArea);
+            }
+            Rect rs = Screen.safeArea;
+            Debug.LogFormat("Safe Area: {0}",rs);
+            solver.addConstraint(cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Top), rs.top));
+            solver.addConstraint(cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Left), rs.left));
+            cassowary.Constraint snewx = cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Right), rs.right);
+            cassowary.Constraint snewy = cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Bottom),rs.bottom);
+            try
+            {
+                solver.addConstraint(snewx);
+            }
+            catch { }
+            try
+            {
+                solver.addConstraint(snewy);
+            }
+            catch { }
+
+        }
         prevScreen = new Vector2(Screen.width,Screen.height);
         Debug.Log(prevScreen);
         Debug.Log(Screen.width);
@@ -724,14 +749,17 @@ public class SimplexCalc : MonoBehaviour
     bool needs_reassign = false;
     void Rebuild()
     {
+        Debug.Log("Rebuilding");
         solver.reset();
        
         if (canvas != null)
         {
+
             if ( !vars.ContainsKey(canvas))
             {
                 vars[canvas] = new WrappedRect(canvas);
             }
+            
             updateScreenConstraints();
             IUIConstraint[] cons = canvas.gameObject.GetComponentsInChildren<IUIConstraint>();
             foreach (IUIConstraint con in cons)
@@ -756,70 +784,12 @@ public class SimplexCalc : MonoBehaviour
     {
        // Debug.Log("validate");
         Rebuild();
-        return;
-        if (canvas != null && !vars.ContainsKey(canvas))
-        {
-            vars[canvas] = new WrappedRect(canvas);
-            updateScreenConstraints();
-        }
-        solver.reset();
-        updateScreenConstraints();
-        if (Screen.width != prevScreen.x || Screen.height != prevScreen.y)
-        {
-            updateScreenConstraints();
-        }
-        HashSet<cassowary.Constraint> set2 = new HashSet<cassowary.Constraint>(cset);
-        HashSet<cassowary.Constraint> toadd = new HashSet<cassowary.Constraint>();
-        foreach (UIConnection con in connections)
-        {
-            cassowary.Constraint st = con.getConstraint(vars);
-            solver.addConstraint(st);
-            Debug.Log(st);
-
-            if (st == null) continue;
-
-            set2.Remove(st);
-           
-            if (!cset.Contains(st))
-            {
-                cset.Add(st);
-                toadd.Add(st);
-            }
-        }
-        foreach(cassowary.Constraint st in set2)
-        {
-            try
-            {
-               // solver.removeConstraint(st);
-            }
-            catch(ArgumentException)
-            {
-
-            }
-            Debug.Log("Old constraint");
-        }
-        foreach (cassowary.Constraint st in toadd)
-        {
-            Debug.Log("New constraint");
-
-            //solver.addConstraint(st);
-        }
-        solver.updateVariables();
-        foreach(var kv in vars)
-        {
-            Debug.Log(kv.Value.linkedTransform);
-           
-            Debug.Log(kv.Value.left.value());
-            Debug.Log(kv.Value.right.value());
-            Debug.Log(kv.Value.top.value());
-            Debug.Log(kv.Value.bottom.value());
-            Debug.Log(Screen.height);
-            Debug.Log(kv.Value.linkedTransform.anchorMax);
-        }
+        
     }
     public void triggerRebuild()
     {
         needs_rebuild = true;
+  
     }
     // Update is called once per frame
     void Update()

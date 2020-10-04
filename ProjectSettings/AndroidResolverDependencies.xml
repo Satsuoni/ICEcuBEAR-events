@@ -1,10 +1,11 @@
 <dependencies>
   <packages>
-    <package>com.google.firebase:firebase-analytics:17.4.1</package>
-    <package>com.google.firebase:firebase-app-unity:6.15.2</package>
-    <package>com.google.firebase:firebase-common:19.3.0</package>
-    <package>com.google.firebase:firebase-messaging:20.1.7</package>
-    <package>com.google.firebase:firebase-messaging-unity:6.15.2</package>
+    <package>com.google.android.gms:play-services-base:17.4.0</package>
+    <package>com.google.firebase:firebase-analytics:17.5.0</package>
+    <package>com.google.firebase:firebase-app-unity:6.16.0</package>
+    <package>com.google.firebase:firebase-common:19.3.1</package>
+    <package>com.google.firebase:firebase-messaging:20.2.4</package>
+    <package>com.google.firebase:firebase-messaging-unity:6.16.0</package>
   </packages>
   <files>
     <file>Assets/Plugins/Android/androidx.annotation.annotation-1.1.0.jar</file>
@@ -13,7 +14,7 @@
     <file>Assets/Plugins/Android/androidx.asynclayoutinflater.asynclayoutinflater-1.0.0.aar</file>
     <file>Assets/Plugins/Android/androidx.collection.collection-1.0.0.jar</file>
     <file>Assets/Plugins/Android/androidx.coordinatorlayout.coordinatorlayout-1.0.0.aar</file>
-    <file>Assets/Plugins/Android/androidx.core.core-1.0.0.aar</file>
+    <file>Assets/Plugins/Android/androidx.core.core-1.2.0.aar</file>
     <file>Assets/Plugins/Android/androidx.cursoradapter.cursoradapter-1.0.0.aar</file>
     <file>Assets/Plugins/Android/androidx.customview.customview-1.0.0.aar</file>
     <file>Assets/Plugins/Android/androidx.documentfile.documentfile-1.0.0.aar</file>
@@ -32,37 +33,36 @@
     <file>Assets/Plugins/Android/androidx.print.print-1.0.0.aar</file>
     <file>Assets/Plugins/Android/androidx.slidingpanelayout.slidingpanelayout-1.0.0.aar</file>
     <file>Assets/Plugins/Android/androidx.swiperefreshlayout.swiperefreshlayout-1.0.0.aar</file>
-    <file>Assets/Plugins/Android/androidx.versionedparcelable.versionedparcelable-1.0.0.aar</file>
+    <file>Assets/Plugins/Android/androidx.versionedparcelable.versionedparcelable-1.1.0.aar</file>
     <file>Assets/Plugins/Android/androidx.viewpager.viewpager-1.0.0.aar</file>
     <file>Assets/Plugins/Android/com.google.android.datatransport.transport-api-2.2.0.aar</file>
     <file>Assets/Plugins/Android/com.google.android.datatransport.transport-backend-cct-2.2.0.aar</file>
     <file>Assets/Plugins/Android/com.google.android.datatransport.transport-runtime-2.2.0.aar</file>
     <file>Assets/Plugins/Android/com.google.android.gms.play-services-ads-identifier-17.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-base-17.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-basement-17.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-17.4.1.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-api-17.4.1.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-base-17.4.1.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-impl-17.4.1.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-sdk-17.4.1.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-sdk-api-17.4.1.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-base-17.4.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-basement-17.4.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-17.5.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-api-17.5.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-base-17.5.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-impl-17.5.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-sdk-17.5.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-measurement-sdk-api-17.5.0.aar</file>
     <file>Assets/Plugins/Android/com.google.android.gms.play-services-stats-17.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.android.gms.play-services-tasks-17.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.auto.value.auto-value-annotations-1.6.5.jar</file>
+    <file>Assets/Plugins/Android/com.google.android.gms.play-services-tasks-17.2.0.aar</file>
     <file>Assets/Plugins/Android/com.google.dagger.dagger-2.24.jar</file>
-    <file>Assets/Plugins/Android/com.google.firebase.firebase-analytics-17.4.1.aar</file>
-    <file>Assets/Plugins/Android/com.google.firebase.firebase-app-unity-6.15.2.aar</file>
-    <file>Assets/Plugins/Android/com.google.firebase.firebase-common-19.3.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.firebase.firebase-analytics-17.5.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.firebase.firebase-app-unity-6.16.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.firebase.firebase-common-19.3.1.aar</file>
     <file>Assets/Plugins/Android/com.google.firebase.firebase-components-16.0.0.aar</file>
     <file>Assets/Plugins/Android/com.google.firebase.firebase-datatransport-17.0.3.aar</file>
     <file>Assets/Plugins/Android/com.google.firebase.firebase-encoders-json-16.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.firebase.firebase-iid-20.1.7.aar</file>
+    <file>Assets/Plugins/Android/com.google.firebase.firebase-iid-20.2.3.aar</file>
     <file>Assets/Plugins/Android/com.google.firebase.firebase-iid-interop-17.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.firebase.firebase-installations-16.3.0.aar</file>
+    <file>Assets/Plugins/Android/com.google.firebase.firebase-installations-16.3.3.aar</file>
     <file>Assets/Plugins/Android/com.google.firebase.firebase-installations-interop-16.0.0.aar</file>
     <file>Assets/Plugins/Android/com.google.firebase.firebase-measurement-connector-18.0.0.aar</file>
-    <file>Assets/Plugins/Android/com.google.firebase.firebase-messaging-20.1.7.aar</file>
-    <file>Assets/Plugins/Android/com.google.firebase.firebase-messaging-unity-6.15.2.aar</file>
+    <file>Assets/Plugins/Android/com.google.firebase.firebase-messaging-20.2.4.aar</file>
+    <file>Assets/Plugins/Android/com.google.firebase.firebase-messaging-unity-6.16.0.aar</file>
     <file>Assets/Plugins/Android/javax.inject.javax.inject-1.jar</file>
   </files>
   <settings>

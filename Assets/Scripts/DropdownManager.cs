@@ -47,6 +47,7 @@ public class DropdownManager : MonoBehaviour
         if (EventRestAPI.Instance == null)
         {
             Debug.Log("NULL Instance");
+            managed.interactable = false;
             return;
         }
         curOptions.Clear();
@@ -83,12 +84,19 @@ public class DropdownManager : MonoBehaviour
         if(managed==null)
             managed = gameObject.GetComponent<ColorDropdown>();
         managed.options = lst;
+        if (lst.Count>0)
+        {
+            managed.interactable = true;
+        }
         //managed.ClearOptions();
         //managed.AddOptions(lst);
     }
     void Update()
     {
-        
+        if (managed.options.Count == 0)
+        {
+            managed.interactable = false;
+        }
     }
     void DropdownValueChanged(ColorDropdown change)
     {

@@ -621,6 +621,25 @@ public class PrimCache<id,t>
     }
 }
 
+public class LifecycleState
+{
+  public bool mainLifecycle;
+  public string curStatus;
+  public string task;
+  public int counter;
+  public int primaryCount;
+  public int secondaryCount;
+    public LifecycleState()
+    {
+        mainLifecycle = false;
+        curStatus = "Waiting";
+        task = "";
+        counter = 0;
+        primaryCount = 0;
+        secondaryCount = 0;
+    }
+}
+
 public class EventRestAPI : MonoBehaviour
 {
 
@@ -637,6 +656,7 @@ public class EventRestAPI : MonoBehaviour
     const string saveFileName = "savedData.json";
     evId expectedNextEvent = new evId(-1,-1);
     bool _lifecycleReady = false;
+    LifecycleState loaderData = new LifecycleState();
     public bool lifecycleReady { get { return _lifecycleReady; } }
     // Start is called before the first frame update
     void Awake()
@@ -655,6 +675,40 @@ public class EventRestAPI : MonoBehaviour
         savedIndex.Clear();
         saveSettings();
         Utilz.UpdateEventList();
+    }
+    public void UpdateLoading()
+    {
+        if (loading!=null)
+        {
+            if (loaderData.task==""||(loaderData.primaryCount==loaderData.counter&& loaderData.secondaryCount == loaderData.counter))
+            {
+                loading.gameObject.SetActive(false);
+                return;
+            }
+            else
+            {
+                loading.gameObject.SetActive(true);
+            }
+            if (loaderData.counter == 0)
+            {
+                loading.SetOuter(1);
+                loading.SetInner(1);
+            }
+            else
+            {
+                loading.SetOuter((float)loaderData.primaryCount / (float)loaderData.counter);
+                loading.SetInner((float)loaderData.secondaryCount / (float)loaderData.counter);
+            }
+            loading.SetCenter(loaderData.primaryCount, loaderData.counter);
+            if (loaderData.mainLifecycle)
+            {
+                loading.SetTitle(string.Format("Initializing: {0}\n{1}", loaderData.curStatus, loaderData.task));
+            }
+            else
+            {
+                loading.SetTitle(string.Format("{0}\n{1}", loaderData.curStatus,loaderData.task));
+            }
+        }
     }
     void Start()
     {
@@ -684,6 +738,7 @@ public class EventRestAPI : MonoBehaviour
         savedIndex = new Dictionary<evId, SavedEventData>();
         isDropdownReady = false;
         _lifecycleReady = false;
+        loaderData = new LifecycleState();
         StartCoroutine(Lifecycle());
        
     }
@@ -865,7 +920,7 @@ public class EventRestAPI : MonoBehaviour
     public static string lastEventsBefore = "lasteventsbeforeidwithtracks";
     public static string efile = "eventfile";
     public static string commentsUrl = "comment";
-
+    public LoadingBar loading;
     string _curComment=null;
     public string currentComment
     {
@@ -896,16 +951,29 @@ public class EventRestAPI : MonoBehaviour
         if (ev == null) yield break;
         string dir = Application.persistentDataPath + "/";
         evId evid = new evId(ev.run,ev.evn);
+        if (!loaderData.mainLifecycle)
+        {
+            loaderData.counter = 1;
+        }
         if(cache.checkCache(evid))
         {
+            loaderData.secondaryCount += 1;
+            if (!loaderData.mainLifecycle)
+            {
+                loaderData.primaryCount = 1;
+            }
             //already have it, break;
             yield break;
         }
+        loaderData.task = "Lock";
+        UpdateLoading();
         while(!_lock(evid))
         {
             yield return null;
         }
         SavedEventData sdat = null;
+        loaderData.task = "Get data";
+        UpdateLoading();
         if (savedIndex.ContainsKey(evid))
         {
             sdat = savedIndex[evid];
@@ -922,6 +990,11 @@ public class EventRestAPI : MonoBehaviour
                         {
                             //load complete
                             cache.pushItem(evid, fl);
+                            loaderData.secondaryCount += 1;
+                            if (!loaderData.mainLifecycle)
+                            {
+                                loaderData.primaryCount = 1;
+                            }
                             _unlock(evid);//rAII is pain
                             yield break;
                         }
@@ -954,9 +1027,11 @@ public class EventRestAPI : MonoBehaviour
                     catch (Exception e)
                     {
                         Debug.LogFormat("Corrupt csv? {0} {1}", sdat.csvName, e);
+                        csvText = null;
                     }
                     if (csvText != null)
                     {
+                        loaderData.task = "Process csv";
                         ProcessEventCsv job = new ProcessEventCsv();
                         job.eDesc = ev;
                         job.eMessage = null;
@@ -964,6 +1039,7 @@ public class EventRestAPI : MonoBehaviour
                         job.saveIntegrated = saveInt;
                         job.saveCsv = false;
                         job.persistPath = Application.persistentDataPath;
+                        UpdateLoading();
                         job.Start();
                         sdat.status = "Processing";
                         yield return StartCoroutine(job.WaitFor());
@@ -974,6 +1050,8 @@ public class EventRestAPI : MonoBehaviour
                         if (job.OutData == null)
                         {
                             Debug.Log("Failed processing");
+                            loaderData.task = "Failed processing";
+                            UpdateLoading();
                         }
                         else
                         {
@@ -981,6 +1059,12 @@ public class EventRestAPI : MonoBehaviour
                             sdat.hashname = job.hashName;
                             sdat.integrationSteps = job.timeSpans;
                             _unlock(evid);
+                            loaderData.secondaryCount += 1;
+                            if (!loaderData.mainLifecycle)
+                            {
+                                loaderData.primaryCount = 1;
+                            }
+                            UpdateLoading();
                             yield break;
                         }
                     }
@@ -1002,6 +1086,8 @@ public class EventRestAPI : MonoBehaviour
         {
             // Request and wait for the desired page.
             //webRequest.chunkedTransfer = false;
+            loaderData.task = "Load csv file";
+            UpdateLoading();
             yield return webRequest.SendWebRequest();
            if (webRequest.isNetworkError|| webRequest.isHttpError)
             {
@@ -1015,10 +1101,15 @@ public class EventRestAPI : MonoBehaviour
                     saveSettings();
                 }
                 _unlock(evid);
+                loaderData.task = "CSV: Network failure";
+                UpdateLoading();
                 yield break;
             }
             else
             {
+                loaderData.task = "Process csv file";
+                loaderData.secondaryCount += 1;
+                UpdateLoading();
                 ProcessEventCsv job = new ProcessEventCsv();
                 job.eDesc = ev;
                 job.saveCsv = saveCSV;
@@ -1032,6 +1123,7 @@ public class EventRestAPI : MonoBehaviour
                 if (job.eMessage != null) { Debug.Log(job.eMessage); }
                 if (job.OutData==null)
                 {
+                    loaderData.task = "Failed processing";
                     sdat.status = "Failed processing";
                     if(!savedIndex.ContainsKey(evid))
                     {
@@ -1040,6 +1132,7 @@ public class EventRestAPI : MonoBehaviour
                         saveSettings();
                     }
                     _unlock(evid);
+                    UpdateLoading();
                     yield break;
                 }
                 cache.pushItem(evid, job.OutData);
@@ -1053,13 +1146,25 @@ public class EventRestAPI : MonoBehaviour
                     settings.eventData.Add(sdat);
                     saveSettings();
                 }
+                if (!loaderData.mainLifecycle)
+                {
+                    loaderData.primaryCount = 1;
+                    UpdateLoading();
+                }
             }
         }
         _unlock(evid);
     }
     IEnumerator loadNotifiedEvents()
     {
-         while( notificationsWoken.Count>0) //amount can change while loading...
+        loaderData.counter = notificationsWoken.Count;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Notification";
+        loaderData.task = "Load Event";
+        UpdateLoading();
+        yield return null;
+        while ( notificationsWoken.Count>0) //amount can change while loading...
         {
             eventDesc toget = notificationsWoken[0];
             notificationsWoken.RemoveAt(0);
@@ -1184,47 +1289,77 @@ public class EventRestAPI : MonoBehaviour
     bool gotLastEvents = false;
     public IEnumerator OptimisticUpdate()
     {
+        loaderData.counter = settings.eventData.Count>0? settings.eventData.Count :1;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Optimistic Update";
+        loaderData.task = "Update event count";
+        UpdateLoading();
+
         int oldCount = settings.eventData.Count;
         gotEventNumber = false;
         yield return StartCoroutine(GetEventNumber());
         if (!gotEventNumber)
         {
+            loaderData.curStatus = "Optimistic Update failed";
             yield break;
         }
-        Debug.LogFormat("Have loaded evets: {0}",nevents);
+        Debug.LogFormat("Have loaded events: {0}",nevents);
         int oldEventNum = settings.eventData.Count;
         if (nevents == settings.eventData.Count)
         {
             Debug.Log(string.Format("No new events detected, {0} currently", nevents));
+            loaderData.primaryCount = settings.eventData.Count;
+            loaderData.secondaryCount = settings.eventData.Count;
+            UpdateLoading();
             yield break;
         }
         if (nevents < oldEventNum)
         {
             Debug.Log(string.Format("Events are shrinking?, {0} currently, {1} before", nevents, oldEventNum));
+            loaderData.counter = 0;
             yield break;
         }
         Int64 delta = nevents - oldEventNum;
+        loaderData.counter = (int)delta;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Optimistic Update";
+        loaderData.task = "Get latest events";
+        UpdateLoading();
         gotLastEvents = false;
         yield return StartCoroutine(GetLastEvents(delta));
         if (!gotLastEvents)
         {
+            loaderData.task = "Failed getting events";
+            UpdateLoading();
             yield break;
         }
         if (lastEventList.Count == 0)
         {
+            loaderData.task = "No latest events";
+            UpdateLoading();
             yield break;
         }
         Debug.LogFormat("Have loaded last events: {0} of {1}", lastEventList.Count,delta);
         if (lastEventList.Count != delta)
         {
             Debug.Log(string.Format("Got wrong number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
-
+            loaderData.counter = (int)lastEventList.Count;
         }
+        loaderData.curStatus = "Loading events";
+        loaderData.task = "Get data";
+        UpdateLoading();
         foreach (eventDesc dsc in lastEventList)
         {
             yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
+            loaderData.primaryCount +=1;
+            UpdateLoading();
             _unlock(new evId(dsc.run,dsc.evn)); //just in case
         }
+        loaderData.primaryCount = loaderData.counter;
+        loaderData.secondaryCount = loaderData.counter;
+        UpdateLoading();
         lastEventList.Clear();
         saveSettings();
         if (oldCount != settings.eventData.Count)
@@ -1427,21 +1562,41 @@ public class EventRestAPI : MonoBehaviour
     {
         string fullSaveName = Application.persistentDataPath + "/" + saveFileName;
         string sourceDir = Application.persistentDataPath;
+        loaderData.mainLifecycle = true;
+        loaderData.counter = 1;
+        loaderData.curStatus = "";
+        loaderData.task = "Load save data";
+        UpdateLoading();
         if (!tryLoadingSave(fullSaveName))
         {
             Debug.Log("Could not read settings, repairing");
+            loaderData.task = "Repair save data";
+            UpdateLoading();
             yield return StartCoroutine(repairSave());
             if (!tryLoadingSave(fullSaveName))
             {
                 Debug.Log("Could not repair settings!");
+                loaderData.curStatus = "Failed loading settings";
+                loaderData.task = "Reinstall";
+                UpdateLoading();
                 yield break;
             }
         }
         if (settings == null)
         {
             Debug.Log("Could not recover settings!");
+            loaderData.curStatus = "Failed loading settings";
+            loaderData.task = "Reinstall";
+            UpdateLoading();
             yield break; //may crash after, but at that point, something is seriously off?
         }
+        loaderData.counter = settings.eventData.Count;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Reindexing";
+        loaderData.task = "Process save data";
+        UpdateLoading();
+        yield return null;
         foreach (SavedEventData evd in settings.eventData) //reindex
         {
             savedIndex[new evId(evd.description.run, evd.description.evn)] = evd;
@@ -1455,6 +1610,9 @@ public class EventRestAPI : MonoBehaviour
             if (evd.hashname != null) mentioned.Add(evd.hashname);
             //Debug.LogFormat("Mentioned {0}", evd.csvName);
         }
+        loaderData.curStatus = "Pruning";
+        UpdateLoading();
+        yield return null;
         foreach (string currentFile in Directory.EnumerateFiles(sourceDir, "*.csv"))
         {
             string fileName = currentFile.Substring(sourceDir.Length + 1);
@@ -1489,6 +1647,9 @@ public class EventRestAPI : MonoBehaviour
         yield return StartCoroutine(fillOutFiles());
         //8. Prune excess files (save json after every step)  -done in above
         Debug.Log("Ending Lifecycle!");
+        loaderData.task = "";
+        loaderData.curStatus = "Complete";
+        loaderData.mainLifecycle = false;
         if (expectedNextEvent.Key == -1)
         {
             fullEventData first = cache.GetFirstData();
@@ -1825,7 +1986,7 @@ public class EventRestAPI : MonoBehaviour
         }
         yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
 
-        Debug.Log("oop");
+        Debug.Log("Loading and saving complete");
         if (!cache.checkCache(evid))
         { //odd...
 
