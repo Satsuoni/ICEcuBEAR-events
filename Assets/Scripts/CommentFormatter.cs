@@ -70,7 +70,9 @@ public class CommentFormatter : MonoBehaviour
     }
     public void Toggle()
     {
+   
         gameObject.SetActive(!gameObject.activeSelf);
-       
+        SimplexCalc.instance?.triggerRebuild();
+
     }
 }
