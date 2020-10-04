@@ -19,15 +19,15 @@ public class Toggleable
     public GameObject togglecontainer;
     public string nameOn="on";
     public string nameOff="off";
-    ToggleContraint[] constraints=null;
-   public ToggleContraint [] getToggles()
+    ToggleConstraint[] constraints=null;
+   public ToggleConstraint [] getToggles()
     {
         if (togglecontainer == null)
-            return new ToggleContraint[0];
+            return new ToggleConstraint[0];
 
         if(constraints==null)
         {
-            constraints = togglecontainer.GetComponents<ToggleContraint>();
+            constraints = togglecontainer.GetComponents<ToggleConstraint>();
         }
         return constraints;
     }
@@ -35,7 +35,7 @@ public class Toggleable
     {
         if (togglecontainer == null)
             return;
-        constraints = togglecontainer.GetComponents<ToggleContraint>();
+        constraints = togglecontainer.GetComponents<ToggleConstraint>();
     }
 }
 
@@ -76,9 +76,9 @@ public class HideUI : MonoBehaviour
         }
         foreach(Toggleable s in moved)
         {
-            ToggleContraint[] cns = s.getToggles();
+            ToggleConstraint[] cns = s.getToggles();
             if(cns!=null)
-            foreach (ToggleContraint cn in cns)
+            foreach (ToggleConstraint cn in cns)
             {
                     if (_hidden)
                         cn.ToggleByName(s.nameOn);

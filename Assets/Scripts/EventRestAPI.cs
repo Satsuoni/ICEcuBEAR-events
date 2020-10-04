@@ -829,7 +829,7 @@ public class EventRestAPI : MonoBehaviour
             {
                 SavedEventData s = new SavedEventData();
                 s.description = eventDesc.getFromCsvName(m);
-                s.status = "Csv recovered";
+                s.status = "Datafile recovered";
 
                 s.csvName = fileName;
                 byte[] csv = File.ReadAllBytes(currentFile);
@@ -1036,7 +1036,7 @@ public class EventRestAPI : MonoBehaviour
                         { Debug.Log("Invalid csv hash"); csvText = null; }
                         else
                         csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
-                        loaderData.task = "Read csv data";
+                        loaderData.task = "Read datafile";
                         UpdateLoading();
                     }
                     catch (Exception e)
@@ -1046,7 +1046,7 @@ public class EventRestAPI : MonoBehaviour
                     }
                     if (csvText != null)
                     {
-                        loaderData.task = "Process csv";
+                        loaderData.task = "Process data";
                         ProcessEventCsv job = new ProcessEventCsv();
                         job.eDesc = ev;
                         job.eMessage = null;
@@ -1101,7 +1101,7 @@ public class EventRestAPI : MonoBehaviour
         {
             // Request and wait for the desired page.
             //webRequest.chunkedTransfer = false;
-            loaderData.task = "Load csv file";
+            loaderData.task = "Load datafile";
             UpdateLoading();
             yield return webRequest.SendWebRequest();
            if (webRequest.isNetworkError|| webRequest.isHttpError)
@@ -1122,7 +1122,7 @@ public class EventRestAPI : MonoBehaviour
             }
             else
             {
-                loaderData.task = "Process csv file";
+                loaderData.task = "Process datafile";
                 loaderData.secondaryCount += 1;
                 UpdateLoading();
                 ProcessEventCsv job = new ProcessEventCsv();
@@ -1747,7 +1747,13 @@ public class EventRestAPI : MonoBehaviour
     public IEnumerator updateComments()
     {
         bool upd = false;
-        foreach(SavedEventData dat in settings.eventData)
+        loaderData.counter = settings.eventData.Count;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Update comments";
+        loaderData.task = "Check events";
+        UpdateLoading();
+        foreach (SavedEventData dat in settings.eventData)
         {
             evId evid = new evId(dat.description.run,dat.description.evn);
             if (dat.description.comment != null)
@@ -1763,6 +1769,9 @@ public class EventRestAPI : MonoBehaviour
                     upd = true;
                 }
             }
+            loaderData.primaryCount += 1;
+            loaderData.secondaryCount += 1;
+            UpdateLoading();
         }
         if (upd) saveSettings();
     }
@@ -1770,6 +1779,14 @@ public class EventRestAPI : MonoBehaviour
     {
         gotLastEvents = false;
         int oldCount = settings.eventData.Count;
+
+            loaderData.counter = 1;
+            loaderData.primaryCount = 0;
+            loaderData.secondaryCount = 0;
+            loaderData.curStatus = "Full update";
+            loaderData.task = "Enumerate API";
+            UpdateLoading();
+        
         yield return StartCoroutine(GetLastEvents(1));
         if (gotLastEvents && lastEventList.Count >= 1)
         {
@@ -1777,12 +1794,19 @@ public class EventRestAPI : MonoBehaviour
             long page = 10;
             HashSet<evId> updCheck = new HashSet<evId>();
             bool left = true;
+            loaderData.counter = lastEventList.Count;
+            loaderData.primaryCount = 0;
+            loaderData.secondaryCount = 0;
+            loaderData.curStatus = "Full update";
+            loaderData.task = "Enumerate API";
+            UpdateLoading();
             while (left)
             {
                 left = false;
                 if (lastEventList.Count == 0) break;
                 lastEventList.Sort((x, y) => { return x.Compare(y); });
                 bool upd = false;
+                loaderData.task = "Process event page";
                 foreach (eventDesc ev in lastEventList)
                 {
                     Debug.Log(ev.track);
@@ -1819,6 +1843,8 @@ public class EventRestAPI : MonoBehaviour
                             upd = true;
                         }
                     }
+                    loaderData.primaryCount += 1;
+                    UpdateLoading();
                 }
                 if(upd)
                 {
@@ -1826,10 +1852,20 @@ public class EventRestAPI : MonoBehaviour
                     saveSettings();
                 }
                 eventDesc curLastEv = lastEventList[0];
+                loaderData.task = "Read event page";
+                loaderData.primaryCount = 0;
+                loaderData.secondaryCount = 0;
+                loaderData.counter = 1;
+                UpdateLoading();
                 yield return StartCoroutine(GetLastEventsBefore(page, curLastEv.run, curLastEv.evn));
                 Debug.LogFormat("Got last before {0} {1}",gotLastBefore,lastEventList.Count);
                 if (!gotLastBefore) left = false;
             }
+            loaderData.task = "Prune files";
+            loaderData.primaryCount = 0;
+            loaderData.secondaryCount = 0;
+            loaderData.counter = 1;
+            UpdateLoading();
             pruneFiles();
             settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
             saveSettings();
