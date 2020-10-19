@@ -297,6 +297,7 @@ public class DOMController : MonoBehaviour
     public GameObject indicator;
     public GameObject fluxball;
     public GameObject tower;
+    public TrackMeshMaker trackmesh;
     void Start()
     {
         ftrack.eid = new KeyValuePair<int, int>(132974, 67924813);
@@ -528,7 +529,7 @@ curEvent = new List<eventData>();
             /// celestial sphere: radius 5 local
             float erad = 2.0f;
             float crad = 1.0f / earth.transform.localScale.x; //7.0f;
-           // Debug.LogFormat("LocalSclae: {0} ",crad);
+           // Debug.LogFormat("LocalScale: {0} ",crad);
             Vector3 spole = new Vector3(0, -erad, 0);
             float a = forw.sqrMagnitude;
             float b = 2 * (spole.x * forw.x + spole.y * forw.y + spole.z * forw.z);
@@ -602,10 +603,10 @@ curEvent = new List<eventData>();
         Debug.LogFormat("Got range {0} {1}",rng.Key,rng.Value);
         timeSpan.SetValueWithoutNotify(rng.Key);
         timeSpan.SetValue2WithoutNotify(rng.Value);
-       
-        if (timeController.value < rng.Key) timeController.SetValueWithoutNotify(rng.Key);
-        if (timeController.value > rng.Value) timeController.SetValueWithoutNotify(rng.Value);
 
+        //if (timeController.value < rng.Key) timeController.SetValueWithoutNotify(rng.Key);
+        //if (timeController.value > rng.Value) timeController.SetValueWithoutNotify(rng.Value);
+        timeController.SetValueWithoutNotify(rng.Key);
         updateToSet(true);
         updateTrackRot();
 
@@ -716,7 +717,7 @@ curEvent = new List<eventData>();
         }
          
         List<ballIntegratedData> afterBalls = new List<ballIntegratedData>();
-        float start = timeSpan.value;//  TODO
+        float start = timeSpan.value;//  
         float end = timeSpan.value2;//
         if (end > 1.0f) end = 1.0f;
         List<ballIntegratedData> collectedBalls = EventRestAPI.Instance.currentEvent.ballData;
@@ -823,10 +824,16 @@ curEvent = new List<eventData>();
             //Debug.Log(track.rec_t0);
             if (track.rec_t0 > atime) return;
             Vector3 tdir = new Vector3(Mathf.Sin(track.zen_rad)*Mathf.Cos(track.azi_rad), Mathf.Sin(track.zen_rad) * Mathf.Sin(track.azi_rad), Mathf.Cos(track.zen_rad));
-            float vel = 0.299792458f / ni;
+            float vel = 0.299792458f;/// ni;
             float dt = atime - track.rec_t0;
             Vector3 ice_offs= -tdir * vel * dt;
             Vector3 ice_pos = new Vector3(track.rec_x, track.rec_y, track.rec_z)+ice_offs;
+            if(trackmesh!=null)
+            {
+                var desc = EventRestAPI.Instance.currentEvent.description;
+                trackmesh.MaybeRecreateMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir/tdir.magnitude, 5000, 30);
+                Debug.LogFormat("Tdir {0}",tdir);
+            }
             //ref1.gameObject.transform.localPosition;
             Matrix4x4 trans=new Matrix4x4();
             Vector3 c1 = ref1.gameObject.transform.localPosition;
@@ -850,6 +857,25 @@ curEvent = new List<eventData>();
 
             Matrix4x4 inv = trans*ice.inverse;
             Vector3 un_pos0=inv.MultiplyPoint3x4(new Vector3(track.rec_x, track.rec_y, track.rec_z));
+            if(trackmesh!=null)
+            {
+                trackmesh.gameObject.transform.localPosition = un_pos0;
+                float stime = start * (t1 - t0) + t0;
+                float etime = end * (t1 - t0) + t0;
+                trackmesh.SetTime(atime- track.rec_t0);
+                trackmesh.SetTimeScale((etime - track.rec_t0));
+                // Vector3 un = inv.MultiplyPoint3x4(new Vector3(track.rec_x, track.rec_y, track.rec_z-1)); lhs = m_Matrix.GetColumn(2),
+               /* var lhs = inv.GetColumn(2);
+                var rhs = inv.GetColumn(1);
+                Quaternion rtt = Quaternion.identity;
+                if (lhs == Vector4.zero && rhs == Vector4.zero)
+                    rtt= Quaternion.identity;
+                else
+                    rtt= Quaternion.LookRotation(lhs, rhs);
+                trackmesh.gameObject.transform.localRotation = rtt;// Quaternion.LookRotation(un_pos0 - un); 
+                trackmesh.gameObject.transform.localScale = new Vector3(0.1f,0.1f,0.1f);*/
+                Debug.LogFormat("Setting meshtimescale: {0} {1}", inv, (t1 - track.rec_t0));
+            }
             Vector3 un_pos1 = inv.MultiplyPoint3x4(ice_pos);
             Quaternion rot=Quaternion.LookRotation(un_pos0-un_pos1);
             pole.transform.localRotation = rot;
