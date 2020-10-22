@@ -76,9 +76,9 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - mytime: 644.0127
-    - timeScale: 34425.7
-    - timeWidth: 0.001
+    - mytime: 9931
+    - timeScale: 6731.49
+    - timeWidth: 0.3
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
