@@ -831,7 +831,7 @@ curEvent = new List<eventData>();
             if(trackmesh!=null)
             {
                 var desc = EventRestAPI.Instance.currentEvent.description;
-                trackmesh.MaybeRecreateMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir/tdir.magnitude, 5000, 30);
+                trackmesh.MaybeRecreateMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir/tdir.magnitude, 5000, 10);
                 Debug.LogFormat("Tdir {0}",tdir);
             }
             //ref1.gameObject.transform.localPosition;

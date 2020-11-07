@@ -6,7 +6,7 @@ namespace MessagePack.Internal
 {
     public static partial class UnsafeMemory32
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw4(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -20,7 +20,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw5(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -35,7 +35,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw6(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -50,7 +50,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw7(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -65,7 +65,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw8(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -80,7 +80,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw9(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -96,7 +96,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw10(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -112,7 +112,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw11(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -128,7 +128,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw12(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -144,7 +144,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw13(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -161,7 +161,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw14(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -178,7 +178,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw15(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -195,7 +195,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw16(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -212,7 +212,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw17(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -230,7 +230,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw18(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -248,7 +248,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw19(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -266,7 +266,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw20(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -284,7 +284,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw21(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -303,7 +303,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw22(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -322,7 +322,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw23(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -341,7 +341,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw24(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -360,7 +360,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw25(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -380,7 +380,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw26(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -400,7 +400,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw27(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -420,7 +420,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw28(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -440,7 +440,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw29(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -461,7 +461,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw30(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -482,7 +482,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw31(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -507,7 +507,7 @@ namespace MessagePack.Internal
 
     public static partial class UnsafeMemory64
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw8(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -521,7 +521,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw9(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -536,7 +536,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw10(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -551,7 +551,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw11(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -566,7 +566,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw12(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -581,7 +581,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw13(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -596,7 +596,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw14(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -611,7 +611,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw15(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -626,7 +626,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw16(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -641,7 +641,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw17(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -657,7 +657,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw18(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -673,7 +673,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw19(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -689,7 +689,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw20(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -705,7 +705,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw21(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -721,7 +721,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw22(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -737,7 +737,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw23(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -753,7 +753,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw24(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -769,7 +769,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw25(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -786,7 +786,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw26(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -803,7 +803,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw27(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -820,7 +820,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw28(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -837,7 +837,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw29(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -854,7 +854,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw30(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
@@ -871,7 +871,7 @@ namespace MessagePack.Internal
             return src.Length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public static unsafe int WriteRaw31(ref byte[] dst, int dstOffset, byte[] src)
         {
             MessagePackBinary.EnsureCapacity(ref dst, dstOffset, src.Length);
