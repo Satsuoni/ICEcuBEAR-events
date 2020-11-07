@@ -12,7 +12,10 @@ using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 using evId = System.Collections.Generic.KeyValuePair<long,long>;
-
+using SharpCompress.Writers;
+using SharpCompress.Common;
+using SharpCompress.Archives.GZip;
+using SharpCompress.Compressors.Deflate;
 
 public delegate void EventListUpdatedHandler();
 public delegate void CurrentEventChangedHandler();
@@ -664,6 +667,30 @@ public class EventRestAPI : MonoBehaviour
         if (_Instance != null) Destroy(gameObject);
         else
             _Instance = this;
+        string fullName = Application.persistentDataPath + "/" + "test.gz";
+        string fsb = Application.persistentDataPath + "/" + "savedData.json";
+        string lsb = Application.persistentDataPath + "/" + "sssavedData.json";
+        using (FileStream originalFileStream = File.OpenRead(fsb))
+        {
+            using (Stream stream = File.OpenWrite(fullName))
+            using (var writer = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Compress, SharpCompress.Compressors.Deflate.CompressionLevel.BestCompression))
+            {
+                byte[] bt = Encoding.ASCII.GetBytes("hello there");
+                // writer.Write(bt, 0, bt.Length);
+                originalFileStream.CopyTo(writer);
+                // bt.CopyTo(writer);
+            }
+        }
+        using (Stream stream = File.OpenRead(fullName))
+        {
+            using (var reader = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Decompress))
+            {
+                using (Stream outf = File.OpenWrite(lsb))
+                { reader.CopyTo(outf); }
+                  
+            }
+            }
+
     }
     void OnDestroy()
     {

@@ -60,7 +60,10 @@ public class TrackMeshMaker : MonoBehaviour
             //same event..
             return;
         }
-        MuonTrack tr = new MuonTrack(initialPos, heading, duration, 0.299792458f, emrate);
+        CascadeData cdat = new CascadeData(heading, 1.0f, 9500);
+        cdat.location = initialPos;
+
+        MuonTrack tr = new MuonTrack(initialPos, heading, duration, 0.299792458f, emrate,cdat);//emrate
         data = tr.Simulate();
         SpawnChildren();
         runId = run;
