@@ -182,7 +182,8 @@ public class CascadeData
     public Vector3 directionPreference;
     public float directionBias;
     public int energy;//int? photon number? 
-    public CascadeData(Vector3 dir, float bias,int en)
+    public float timeOffset;
+    public CascadeData(Vector3 dir, float bias,int en,float time)
     {
         location = Vector3.zero;
         directionPreference = dir.normalized;
@@ -190,8 +191,9 @@ public class CascadeData
         if (directionBias < 0) directionBias = 0;
         if (directionBias >1) directionBias = 1;
         energy = en;
+        timeOffset = time;
     }
-    public List<ScatterPhoton> Emit(float timeOffset,float duration)
+    public List<ScatterPhoton> Emit(float duration)
     {
         List<ScatterPhoton> ret = new List<ScatterPhoton>();
         for (int i= 0; i < energy;i++)
@@ -322,7 +324,7 @@ public class MuonTrack
         {
             foreach (CascadeData dat in energyLosses)
             {
-                emitted = dat.Emit(0, 0.2f);
+                emitted = dat.Emit( 0.02f);
                 ret.meshes.AddRange(PhotonsToMesh(emitted).meshes);
             }
          }
