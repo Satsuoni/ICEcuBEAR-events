@@ -277,7 +277,188 @@ private void Run()
 }
  }
 
-public class ProcessEventCsv : ThreadedJob
+public class LoadMeshfile : ThreadedJob
+{
+    public string fname;
+    public byte[] loaded;
+    public MultimeshObject OutData = null;
+    public bool outSuccess = false;
+
+    protected override void ThreadFunction()
+    {
+        if(fname!=null&&loaded==null)
+        {
+            if (File.Exists(fname))
+            {
+                Debug.LogFormat("Read ing meshfile {0}", fname);
+                loaded= File.ReadAllBytes(fname);
+                Debug.LogFormat("Read {0} bytes from meshfile", loaded.Length);
+
+            }
+            else
+            {
+                outSuccess = false;
+                return;
+            }
+        }
+        if(loaded==null)
+        {
+            outSuccess = false;
+            return;
+        }
+        OutData= new MultimeshObject();
+        if (!OutData.LoadFromZippedBytes(loaded))
+        {
+            if(fname!=null)
+            {
+                Debug.LogFormat("Removing corrupt meshfile: {0}", fname);
+                File.Delete(fname);
+                outSuccess = false;
+                return;
+            }
+        }  
+            Debug.LogFormat("Processed meshfile {0}", OutData.meshes.Count);
+        outSuccess = true;
+
+    }
+}
+public class SimulateMillipede : ThreadedJob
+{
+    public string persistPath;
+    public String InData;  // arbitary job data -millipede csv
+    public MultimeshObject OutData = null;
+    public eventDesc eDesc;
+    public trackData track;
+    public bool saveMeshfile=false;
+    public struct burstEntry
+    {
+        public double energy;
+        public Vector3 coords;
+        public int index;
+        public double time;
+    }
+
+    protected override void ThreadFunction()
+    {
+        if (eDesc == null)
+        {
+            eDesc = new eventDesc();
+            eDesc.baseDesc = "placeholder";
+            eDesc.run = 100;
+            eDesc.evn = 100;
+            eDesc.energy = 100;
+        }
+        burstEntry[] bursts = null;
+        string[] fLines = null;
+        if (InData.Contains("\r\n"))
+        {
+            fLines = Regex.Split(InData, "\r\n");
+        }
+        else
+        {
+            fLines = Regex.Split(InData, "\n|\r");
+
+        }
+        double energyMin = -1f, energyMax = -1f;
+        bool skipHeader = true;
+        List<burstEntry> lst = new List<burstEntry>();
+        foreach (var line in fLines)
+        {
+            if (skipHeader)
+            {
+                skipHeader = false;
+                continue;
+            }
+            try
+            {
+                string[] fields = line.Split(',');
+                burstEntry dat = new burstEntry();
+                dat.index = int.Parse(fields[0]);
+                dat.energy = double.Parse(fields[1]);
+                dat.time = double.Parse(fields[2]);
+                dat.coords.x = float.Parse(fields[3]);
+                dat.coords.y = float.Parse(fields[4]);
+                dat.coords.z = float.Parse(fields[5]);
+                lst.Add(dat);
+                if (energyMax == -1 || energyMax < dat.energy) energyMax = dat.energy;
+                if (energyMin == -1 || energyMin > dat.energy)
+                    if(dat.energy != 0) energyMin = dat.energy;
+            }
+            catch (Exception)
+            {
+                //Debug.Log(e);
+                Debug.Log(line);
+
+                //Debug.Log(line.Split(','));
+            }
+        }
+        bursts = lst.ToArray();
+        energyMax = Math.Sqrt(energyMax-energyMin);
+        //energyMin = 0;
+        if(track==null)
+        {
+            //create fake track XD
+            track = new trackData();
+            track.azi_rad = 0;
+            track.zen_rad = 0;
+            if(bursts.Length>0)
+            {
+                track.rec_x = bursts[0].coords.x;
+                track.rec_y = bursts[0].coords.y;
+                track.rec_z = bursts[0].coords.z;
+                track.rec_t0= (float)bursts[0].time;
+            }
+        }
+        Vector3 tdir = new Vector3(Mathf.Sin(track.zen_rad) * Mathf.Cos(track.azi_rad), Mathf.Sin(track.zen_rad) * Mathf.Sin(track.azi_rad), Mathf.Cos(track.zen_rad));
+        float vel = 0.299792458f;/// ni;
+        // float dt = atime - track.rec_t0;
+        //Vector3 ice_offs = -tdir * vel * dt;
+        //  Vector3 ice_pos = new Vector3(track.rec_x, track.rec_y, track.rec_z) + ice_offs;
+        Vector3 initialPos = new Vector3(track.rec_x, track.rec_y, track.rec_z);
+        Vector3 heading = -tdir / tdir.magnitude;
+        float duration=5000; float emrate;
+        float itime = track.rec_t0;
+        int cntnz = 0;
+        double accum = 0;
+        for (int i = 0; i < bursts.Length; i++)
+        {
+            if (bursts[i].energy <= 0.00001) continue;
+            cntnz++;
+            accum += Math.Sqrt(bursts[i].energy - energyMin);
+        }
+        if (accum < 1) accum = 1;
+        CascadeData[] cdat = new CascadeData[cntnz];
+        int j = 0;
+        // float maxEnergy = 0;
+        int minPhotons = 25;
+        int totalExtraPhotons = cntnz * minPhotons * 2;
+        if (totalExtraPhotons > 3000)
+        {
+            totalExtraPhotons = 3000;
+            minPhotons = totalExtraPhotons / (2 * cntnz);
+        }
+        Debug.LogFormat("Total photons: {0} {1}", totalExtraPhotons*1.5, cntnz);
+        for (int i = 0; i < bursts.Length; i++)
+        {
+            if (bursts[i].energy <= 0.00001) continue;
+            double encf = Math.Sqrt(bursts[i].energy - energyMin)* totalExtraPhotons / accum + minPhotons;
+            int en = (int)(encf);
+           // if (en > 5000) en = 5000;
+            cdat[j] = new CascadeData(heading, 1.0f, (int)en, (float)bursts[i].time - itime);
+            cdat[j].location = bursts[i].coords;
+            j++;
+        }
+        //new CascadeData(heading, 1.0f, 9500);
+        //6000 / maxEnergy
+
+        MuonTrack tr = new MuonTrack(initialPos, heading, duration, 0.299792458f, 1, cdat);//emrate
+        OutData = tr.Simulate();
+        string fname = String.Format("{0}_{1}_trail.gz", eDesc.run,eDesc.evn);
+        if(saveMeshfile)
+           OutData.SaveToFile(persistPath + "/" +fname);
+    }
+}
+    public class ProcessEventCsv : ThreadedJob
 {
     public int timeSpans = 2500;
     public string persistPath;
@@ -642,6 +823,11 @@ public class LifecycleState
         secondaryCount = 0;
     }
 }
+public class ExtraSimData
+{
+    public MultimeshObject mesh;
+}
+
 
 public class EventRestAPI : MonoBehaviour
 {
@@ -654,6 +840,7 @@ public class EventRestAPI : MonoBehaviour
     public static SavedEventsSettings settings = null;
     Dictionary<evId,SavedEventData> savedIndex = new Dictionary<evId, SavedEventData>();
     PrimCache<evId, fullEventData> cache = new PrimCache<evId, fullEventData>();
+    PrimCache<evId, ExtraSimData> simcache = new PrimCache<evId, ExtraSimData>();
     public static volatile bool isDropdownReady = false;
     public static List<eventDesc> notificationsWoken = new List<eventDesc>();
     const string saveFileName = "savedData.json";
@@ -667,29 +854,31 @@ public class EventRestAPI : MonoBehaviour
         if (_Instance != null) Destroy(gameObject);
         else
             _Instance = this;
-        string fullName = Application.persistentDataPath + "/" + "test.gz";
-        string fsb = Application.persistentDataPath + "/" + "savedData.json";
-        string lsb = Application.persistentDataPath + "/" + "sssavedData.json";
-        using (FileStream originalFileStream = File.OpenRead(fsb))
-        {
-            using (Stream stream = File.OpenWrite(fullName))
-            using (var writer = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Compress, SharpCompress.Compressors.Deflate.CompressionLevel.BestCompression))
-            {
-                byte[] bt = Encoding.ASCII.GetBytes("hello there");
-                // writer.Write(bt, 0, bt.Length);
-                originalFileStream.CopyTo(writer);
-                // bt.CopyTo(writer);
-            }
-        }
-        using (Stream stream = File.OpenRead(fullName))
-        {
-            using (var reader = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Decompress))
-            {
-                using (Stream outf = File.OpenWrite(lsb))
-                { reader.CopyTo(outf); }
-                  
-            }
-            }
+        simcache= new PrimCache<evId, ExtraSimData>();
+        simcache.setMaxItems(10);
+        // string fullName = Application.persistentDataPath + "/" + "test.gz";
+        //  string fsb = Application.persistentDataPath + "/" + "savedData.json";
+        //   string lsb = Application.persistentDataPath + "/" + "sssavedData.json";
+        /*  using (FileStream originalFileStream = File.OpenRead(fsb))
+          {
+              using (Stream stream = File.OpenWrite(fullName))
+              using (var writer = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Compress, SharpCompress.Compressors.Deflate.CompressionLevel.BestCompression))
+              {
+                  byte[] bt = Encoding.ASCII.GetBytes("hello there");
+                  // writer.Write(bt, 0, bt.Length);
+                  originalFileStream.CopyTo(writer);
+                  // bt.CopyTo(writer);
+              }
+          }
+          using (Stream stream = File.OpenRead(fullName))
+          {
+              using (var reader = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Decompress))
+              {
+                  using (Stream outf = File.OpenWrite(lsb))
+                  { reader.CopyTo(outf); }
+
+              }
+              }*/
 
     }
     void OnDestroy()
@@ -982,6 +1171,98 @@ public class EventRestAPI : MonoBehaviour
         if (__locks == null) __locks = new HashSet<evId>();
         if (__locks.Contains(id)) __locks.Remove(id);
     }
+    public MultimeshObject DemandMMesh(eventDesc ev )
+    {
+        evId evid = new evId(ev.run, ev.evn);
+        if (!eventHasSim(evid)) return null;
+        if (simcache.checkCache(evid))
+        {
+            ExtraSimData s = simcache.getItem(evid);
+            return s.mesh;
+        }
+        StartCoroutine(simulateSingleEvent(ev));
+        return null;
+    }
+    public bool eventHasSim(evId ev)
+    {
+        HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(ev);
+        if (dat == null) return false;
+        if (dat.meshFile == null && dat.millipedeFile == null) return false;
+        return true;
+    }
+    IEnumerator simulateSingleEvent(eventDesc ev, bool saveMeshfile = true)
+    {
+        if (ev == null) yield break;
+        string dir = Application.persistentDataPath + "/";
+        evId evid = new evId(ev.run, ev.evn);
+        if (!eventHasSim(evid)) yield break;
+        if (simcache.checkCache(evid))
+        {
+            ExtraSimData s = simcache.getItem(evid);
+            if (s.mesh != null) yield break;
+        }
+        // currently, only built-in Millipede! TODO...
+        HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(evid);
+        if (dat == null) yield break;
+        if(dat.meshFile!=null)
+        {
+            ExtraSimData s = new ExtraSimData();
+            LoadMeshfile job = new LoadMeshfile();
+            job.fname = null;
+            job.loaded = dat.meshFile.bytes;
+            job.Start();
+            yield return StartCoroutine(job.WaitFor());
+            if(!job.outSuccess)
+            {
+                Debug.Log("Invalid hardcoded file!");
+                yield break;
+            }
+            s.mesh = job.OutData;
+            simcache.pushItem(evid, s);
+            yield break;
+        }
+        while (!_lock(evid))
+        {
+            yield return null;
+        }
+        if (!savedIndex.ContainsKey(evid))
+            yield return StartCoroutine(loadAndSaveSingleEvent(ev,false,true));
+        string fname = Application.persistentDataPath+'/'+String.Format("{0}_{1}_trail.gz", ev.run, ev.evn);
+        if (File.Exists(fname))
+        {
+            Debug.LogFormat("Read ing meshfile {0}", fname);
+            LoadMeshfile job = new LoadMeshfile();
+            job.fname = fname;
+            job.loaded = null;
+            job.Start();
+            yield return StartCoroutine(job.WaitFor());
+            if (!job.outSuccess)
+            {
+                _unlock(evid);
+                yield return StartCoroutine(simulateSingleEvent(ev, saveMeshfile));
+                yield break;
+            }
+            ExtraSimData s = new ExtraSimData();
+            s.mesh = job.OutData;
+            simcache.pushItem(evid, s);
+        }
+        else
+        {
+            SimulateMillipede job = new SimulateMillipede();
+            job.eDesc = ev;
+            job.saveMeshfile = saveMeshfile;
+            job.InData = dat.millipedeFile.text;
+            job.persistPath = Application.persistentDataPath;
+            job.OutData = null;
+            job.track = ev.track;
+            job.Start();
+            yield return StartCoroutine(job.WaitFor());
+            ExtraSimData s = new ExtraSimData();
+            s.mesh = job.OutData;
+            simcache.pushItem(evid, s);
+        }
+        _unlock(evid);
+    }
     //preferably, only process event here to avoid races, etc;
     IEnumerator loadAndSaveSingleEvent(eventDesc ev,bool saveInt=true,bool saveCSV=true)
     {
@@ -1052,12 +1333,17 @@ public class EventRestAPI : MonoBehaviour
             if(sdat.csvName!=null)
             {
                 string fcsv = dir + sdat.csvName;
-                if (File.Exists(fcsv))
+                HardcodedEventData hdat = HardcodedEvents.instance.GetHardcoded(evid);
+                if (File.Exists(fcsv)||(hdat!=null&&hdat.csvFile!=null))
                 {
                     string csvText = null;
                     try
                     {
-                        byte[] csvBytes = File.ReadAllBytes(fcsv);
+                        byte[] csvBytes;
+                        if (hdat != null && hdat.csvFile != null)
+                            csvBytes = hdat.csvFile.bytes;
+                        else
+                            csvBytes = File.ReadAllBytes(fcsv);
                         string hash = Utilz.GenerateSHA256(csvBytes);
                         if(sdat.csvHash==null || hash!=sdat.csvHash)
                         { Debug.Log("Invalid csv hash"); csvText = null; }
@@ -1329,6 +1615,98 @@ public class EventRestAPI : MonoBehaviour
     bool gotEventNumber = false;
     Int64 nevents;
     bool gotLastEvents = false;
+    public IEnumerator HardcodedUpdate()
+    {
+        loaderData.counter = (int)HardcodedEvents.instance.events.Length;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Hardcoded events Update";
+        loaderData.task = "Processing...";
+        
+        foreach (HardcodedEventData dat in HardcodedEvents.instance.events)
+        {
+            if(dat.csvFile!=null)
+            {
+                eventDesc dsc=new eventDesc();
+                dsc.baseDesc = dat.desc.baseDesc;
+                dsc.comment = dat.desc.comment;
+                dsc.energy = dat.desc.energy;
+                dsc.eventDate = dat.desc.eventDate;
+                dsc.evn = dat.evId;
+                dsc.humName = dat.desc.humName;
+                dsc.run = dat.runId;
+                yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
+                loaderData.primaryCount ++ ;
+                loaderData.secondaryCount ++ ;
+                UpdateLoading();
+            }
+        }
+    }
+    public IEnumerator HardcodedSimulate()
+    {
+        loaderData.counter =1;
+        loaderData.primaryCount = 0;
+        loaderData.secondaryCount = 0;
+        loaderData.curStatus = "Hardcoded events";
+        loaderData.task = "Simulating";
+        int simCnt = 0;
+        foreach (HardcodedEventData dat in HardcodedEvents.instance.events)
+        {
+            if (dat.millipedeFile != null || dat.meshFile != null)
+                simCnt++;
+            
+        }
+        loaderData.counter = simCnt;
+        Debug.LogFormat("Simulateling: {0}",simCnt);
+        UpdateLoading();
+        int ccnt = 0;
+        foreach (HardcodedEventData dat in HardcodedEvents.instance.events)
+        {
+            if (dat.millipedeFile != null || dat.meshFile != null)
+
+            {
+                Debug.LogFormat("Simulstart: {0} {1}", dat.runId, dat.evId);
+                ccnt++;
+                loaderData.counter = simCnt;
+                loaderData.primaryCount = ccnt-1;
+                loaderData.secondaryCount = ccnt;
+                loaderData.curStatus = "Hardcoded events";
+                loaderData.task = "Simulating";
+                UpdateLoading();
+                evId evid = new evId(dat.runId,dat.evId);
+                SavedEventData sd = null;// savedIndex[evid];
+                eventDesc dsc = null;
+                if(!savedIndex.TryGetValue(evid,out sd))
+                {
+                    dsc = new eventDesc();
+                    dsc.baseDesc = dat.desc.baseDesc;
+                    dsc.comment = dat.desc.comment;
+                    dsc.energy = dat.desc.energy;
+                    dsc.eventDate = dat.desc.eventDate;
+                    dsc.evn = dat.evId;
+                    dsc.humName = dat.desc.humName;
+                    dsc.run = dat.runId;
+
+                }
+                else
+                {
+                    dsc = sd.description;
+                  //  dsc.track = null;
+                }
+              
+                yield return StartCoroutine(simulateSingleEvent(dsc));
+                Debug.LogFormat("Simulated: {0} {1}", dat.runId,dat.evId);
+                loaderData.counter = simCnt;
+                loaderData.primaryCount = ccnt;
+                loaderData.secondaryCount = ccnt;
+                loaderData.curStatus = "Hardcoded events";
+                loaderData.task = "Simulating";  
+                UpdateLoading();
+            }
+
+        }
+
+    }
     public IEnumerator OptimisticUpdate()
     {
         loaderData.counter = settings.eventData.Count>0? settings.eventData.Count :1;
@@ -1604,6 +1982,10 @@ public class EventRestAPI : MonoBehaviour
     {
         string fullSaveName = Application.persistentDataPath + "/" + saveFileName;
         string sourceDir = Application.persistentDataPath;
+        while(HardcodedEvents.instance==null) //wait for hardcoded to load in... 
+        {
+            yield return null;
+        }
         loaderData.mainLifecycle = true;
         loaderData.counter = 1;
         loaderData.curStatus = "";
@@ -1677,16 +2059,21 @@ public class EventRestAPI : MonoBehaviour
         Utilz.UpdateEventList();
         //4. If woken up by notification tap - try getting event data if we don't have it in the list as coroutine...
         StartCoroutine(loadNotifiedEvents());
+        // Run update on hardcoded events
+        yield return StartCoroutine(HardcodedUpdate());
+
         //5. Run network update for eventnum we don't seem to have. Save up to set number of files from new ones.
         yield return StartCoroutine(OptimisticUpdate());
         pruneFiles();
         cache.Prune();
         //6. Run a full network update (with paging) as coroutine to fill up gaps if any
         yield return StartCoroutine(runFullUpdate());
+        yield return StartCoroutine(HardcodedSimulate());
         //7.Download files and process files to fill up settings quota.
         _lifecycleReady = true;
   
         yield return StartCoroutine(fillOutFiles());
+        
         //8. Prune excess files (save json after every step)  -done in above
         Debug.Log("Ending Lifecycle!");
         loaderData.task = "";
@@ -1836,7 +2223,7 @@ public class EventRestAPI : MonoBehaviour
                 loaderData.task = "Process event page";
                 foreach (eventDesc ev in lastEventList)
                 {
-                    Debug.Log(ev.track);
+                  //  Debug.Log(ev.track);
                     evId eid = new evId(ev.run, ev.evn);
                     if (!updCheck.Contains(eid))
                     {
@@ -1865,7 +2252,7 @@ public class EventRestAPI : MonoBehaviour
                         }
                         if(!ev.Equals(savedIndex[eid].description))
                         {
-                            Debug.LogFormat("Track: {0}", ev.track);
+                          //  Debug.LogFormat("Track: {0}", ev.track);
                             savedIndex[eid].description = ev;
                             upd = true;
                         }
@@ -1903,8 +2290,12 @@ public class EventRestAPI : MonoBehaviour
     }
     public trackData forcedTracks(evId id)
     {
-        trackData frc=null;
-      if(id.Key== 133119&&id.Value== 22683750)
+        HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(id);
+        if (dat == null) return null;
+        if (dat.tracks.Length > 0) return dat.tracks[0];
+                return null;
+       // trackData frc=null;
+      /*if(id.Key== 133119&&id.Value== 22683750)
         {
             frc = new trackData();
             frc.azi_rad = 1.5359396402731433f;
@@ -1917,9 +2308,9 @@ public class EventRestAPI : MonoBehaviour
             frc.rec_z = 8.055729493786885f;
             frc.zen_rad = 1.7916152089981798f;
            
-        }
+        }*/
 
-        if (id.Key == 132910 && id.Value == 57145925)
+        /*if (id.Key == 132910 && id.Value == 57145925)
         {
             frc = new trackData();
             frc.azi_rad = 2.160849318134296f;
@@ -1932,8 +2323,8 @@ public class EventRestAPI : MonoBehaviour
             frc.rec_z = -502.3460613431437f;
             frc.zen_rad = 1.752881090566949f;
            
-        }
-        if (id.Key == 124861 && id.Value == 32863663)
+        }*/
+       /* if (id.Key == 124861 && id.Value == 32863663)
         {
             frc = new trackData();
             frc.azi_rad = 5.463772410377908f;
@@ -1945,8 +2336,8 @@ public class EventRestAPI : MonoBehaviour
             frc.rec_y = -274.6983698626916f;
             frc.rec_z = -157.7610224514117f;
             frc.zen_rad = 1.7652231018807554f;
-         }
-
+         }*/
+/*
         if (id.Key == 130033 && id.Value == 50579430)
         {
             frc = new trackData();
@@ -1974,10 +2365,10 @@ public class EventRestAPI : MonoBehaviour
             frc.zen_rad = 1.585833004839499f;
            // 132974,,,67924813,,,,,,
         }
+        */
 
 
-
-            return frc;
+            return null;
     }
     void assignExpected()
     {

@@ -120,6 +120,18 @@ public class TrackMeshMaker : MonoBehaviour
             cnt += 1;
         }
     }
+    public void UseMesh(int run, int ev, MultimeshObject mmesh)
+    {
+        if (run == runId && ev == evId)
+        {
+            //same event..
+            return;
+        }
+        data = mmesh;
+        SpawnChildren();
+        runId = run;
+        evId = ev;
+    }
     public void MaybeRecreateProperMesh(int run, int ev, Vector3 initialPos, Vector3 heading, float duration, float emrate, float itime)
     {
         if (run == runId && ev == evId)
@@ -158,6 +170,8 @@ public class TrackMeshMaker : MonoBehaviour
 
                 MuonTrack tr = new MuonTrack(initialPos, heading, duration, 0.299792458f, 6000/maxEnergy, cdat);//emrate
                 data = tr.Simulate();
+                data.SaveToFile(Application.persistentDataPath + "/" + "trail.gz");
+                data.LoadFromFile(Application.persistentDataPath + "/" + "trail.gz");
                 SpawnChildren();
                 runId = run;
                 evId = ev;

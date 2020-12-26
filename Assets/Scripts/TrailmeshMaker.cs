@@ -2,7 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
+using System.IO;
+using System.Text;
 using UnityEngine;
+using SharpCompress.Compressors.Deflate;
+using SimpleJSON;
 public class Meshobject
 {
     public Vector3[] verts;
@@ -14,6 +18,40 @@ public class Meshobject
         uvs = u;
         indices = i;
     }
+    public Meshobject(JSONObject obj)
+    {
+        JSONArray vrt =(JSONArray) obj["vertices"];
+        JSONArray uv = (JSONArray) obj["uvs"];
+        JSONArray ind = (JSONArray)obj["indices"];
+        if(vrt==null||uv==null||ind==0)
+        {
+            return;
+        }
+        verts = new Vector3[vrt.Count];
+        int cnt = 0;
+        foreach(JSONNode n in vrt)
+        {
+            if (!n.IsArray) return;
+            verts[cnt] =new Vector3(n[0],n[1],n[2]);
+            cnt++;
+        }
+        cnt = 0;
+        uvs = new Vector2[uv.Count];
+        foreach (JSONNode n in uv)
+        {
+            if (!n.IsArray) return;
+            uvs[cnt] = new Vector2(n[0], n[1]);
+            cnt++;
+        }
+        cnt = 0;
+
+        indices = new int[ind.Count];
+        foreach (JSONNode n in ind)
+        {
+            indices[cnt] = n;
+            cnt++;
+        }
+    }
     public Mesh ToMesh()
     {
         Mesh newM = new Mesh();
@@ -22,10 +60,109 @@ public class Meshobject
         newM.SetIndices(indices, MeshTopology.Lines, 0);
         return newM;
     }
+    public  JSONNode ToJson()
+    {
+        JSONObject ret = new JSONObject();
+        ret["vertices"] = new JSONArray();
+        ret["uvs"] = new JSONArray();
+        ret["indices"] = new JSONArray();
+        foreach(Vector3 v in verts)
+        {
+            JSONArray varr = new JSONArray();
+            varr.Add(v.x); varr.Add(v.y); varr.Add(v.z);
+            ret["vertices"].Add(varr);
+        }
+        foreach (Vector2 v in uvs)
+        {
+            JSONArray varr = new JSONArray();
+            varr.Add(v.x); varr.Add(v.y); 
+            ret["uvs"].Add(varr);
+        }
+        foreach (int index in indices)
+        {
+            ret["indices"].Add(index);
+        }
+            return ret;
+    }
 }
 public class MultimeshObject
 {
     public List<Meshobject> meshes=new List<Meshobject>();
+    public bool SaveToFile(string fname)
+    {
+        JSONArray  data = new JSONArray();
+        foreach(Meshobject msh in meshes)
+        {
+            data.Add(msh.ToJson());
+        }
+            using (Stream stream = File.OpenWrite(fname))
+            using (var writer = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Compress, SharpCompress.Compressors.Deflate.CompressionLevel.BestCompression))
+            {
+                byte[] bt = Encoding.ASCII.GetBytes(data.ToString());
+                writer.Write(bt, 0, bt.Length);
+                
+                // bt.CopyTo(writer);
+            }
+        return true;
+    }
+    public bool LoadFromZippedBytes(byte[] bytes)
+    {
+        MemoryStream msin = new MemoryStream(bytes,false);
+        byte[] tmp = null;
+        using (var reader = new GZipStream(msin, SharpCompress.Compressors.CompressionMode.Decompress))
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                reader.CopyTo(ms);
+                tmp = ms.ToArray();
+                Debug.LogFormat("unpacked {0}",tmp.Length);
+               // return true;
+               
+            }
+
+        }
+        return LoadFromBytes(tmp);
+    }
+        public bool LoadFromBytes(byte[] bytes)
+    {
+        string dat = "";
+        try
+        {
+           dat=Encoding.UTF8.GetString(bytes);
+        }
+        catch
+        {
+            return false;
+        }
+        JSONNode data = JSON.Parse(dat);
+        if (!data.IsArray) return false;
+        meshes = new List<Meshobject>();
+        foreach(var jn in data)
+        {
+            if (!jn.Value.IsObject) return false;
+            Meshobject mesh = new Meshobject((JSONObject)jn.Value);
+            meshes.Add(mesh);
+        }
+        return true;
+    }
+    public bool LoadFromFile(string fname)
+    {
+        if (!File.Exists(fname)) return false;
+        using (Stream stream = File.OpenRead(fname))
+        {
+            using (var reader = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Decompress))
+            {
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    reader.CopyTo(ms);
+                    return LoadFromBytes(ms.ToArray());
+                }
+
+            }
+        }
+      //  return false;
+    }
+
 
 }
 
@@ -41,13 +178,14 @@ public class ScatterPhoton
     public void Propagate(float absorbtion, float scatter)// scatter length
     {
         float distance = TrailmeshMaker.DrawExp(scatter);
+        //Debug.LogFormat("Ran: {0} {1} {2}", distance, absorbtion, scatter);
         float dur = distance / speed;
         float decayprob = 1.0f - Mathf.Exp(-distance / absorbtion);
         prevPosition = position;
         prevTime = timeOffset;
         position = position + direction * distance;
         timeOffset += dur;
-        if (UnityEngine.Random.value<=decayprob)
+        if (TrailmeshMaker.rndgen.NextDouble()<=decayprob)
         {
             decayed = true;
             return;
@@ -143,6 +281,7 @@ public static class IcecubeDust
     public static float AbsorbtionLength(Vector3 pos, Vector3 dir, double wlen = 400)
     {
         int layer = GetLayer((double)pos.x, (double)pos.y, (double)pos.z);
+       
         double alen = GetAbsorbLen(wlen, layer);
         double anizo = getAnizoAbsScaling((double)dir.x, (double)dir.y, (double)dir.z);
         return (float)(alen * anizo);
@@ -198,20 +337,21 @@ public class CascadeData
         List<ScatterPhoton> ret = new List<ScatterPhoton>();
         for (int i= 0; i < energy;i++)
         {
-            Vector3 emitPos = location + radius * UnityEngine.Random.onUnitSphere;
+            Vector3 emitPos = location + radius * TrailmeshMaker.onUnitSphere();
             Vector3 perp = new Vector3(-directionPreference.y, directionPreference.x, 0);
             if (directionPreference.z > 0.9)
             {
                 perp = new Vector3(0, directionPreference.z, -directionPreference.y);
             }
-            Quaternion rt = Quaternion.AngleAxis(UnityEngine.Random.value * 360, directionPreference);
+            Quaternion rt = Quaternion.AngleAxis((float)TrailmeshMaker.rndgen.NextDouble() * 360, directionPreference);
             perp = (rt * perp).normalized;
-            float angl = Mathf.PI * (1 - directionBias)* UnityEngine.Random.value;
+            float angl = Mathf.PI * (1 - directionBias)* (float)TrailmeshMaker.rndgen.NextDouble();
             Vector3 dir = (directionPreference * Mathf.Cos(angl) + perp * Mathf.Sin(angl)).normalized;
             ScatterPhoton pht = new ScatterPhoton();
+           // Debug.LogFormat("Derection:{0} {1}", dir, angl);
             pht.direction = dir;
             pht.position = emitPos;
-            pht.timeOffset = timeOffset+duration* UnityEngine.Random.value;
+            pht.timeOffset = timeOffset+duration* (float)TrailmeshMaker.rndgen.NextDouble();
             ret.Add(pht);
         }
         return ret;
@@ -219,6 +359,7 @@ public class CascadeData
 }
 public class MuonTrack
 {
+    System.Random rndgen = new System.Random();
     public float duration;
     public float speed;
     public Vector3 initialPos;
@@ -229,9 +370,9 @@ public class MuonTrack
     public static float cos41 = Mathf.Cos(41.0f * Mathf.PI / 180.0f);
     ScatterPhoton EmitCherenkovPhoton(Vector3 pos,float timeOffset)
     {
-        float shift = UnityEngine.Random.value;
+        float shift = (float)rndgen.NextDouble();
         Vector3 perp = new Vector3(-direction.y, direction.x, 0);
-        if (direction.z>0.9)
+        if (Mathf.Abs(direction.z)>0.9)
         {
             perp= new Vector3(0, direction.z, -direction.y);
         }
@@ -283,6 +424,7 @@ public class MuonTrack
                     indc.Add(verts.Count - 1);
                 }
                 if (verts.Count > 65530) break;
+               // Debug.LogFormat("Phdir: {0}", ph.direction);
                 ph.Propagate(IcecubeDust.AbsorbtionLength(ph.position,ph.direction), IcecubeDust.ScatterLength(ph.position));
                 cnt += 1;
             }
@@ -310,7 +452,7 @@ public class MuonTrack
         List<ScatterPhoton> emitted = new List<ScatterPhoton>();
         for(int i=0;i<emittedPhotons;i++)
         {
-            float emitTime = UnityEngine.Random.value * duration;
+            float emitTime = (float)rndgen.NextDouble() * duration;
             Vector3 ppos = emitTime * speed * direction + initialPos;
             emitted.Add(EmitCherenkovPhoton(ppos,emitTime));
             if (emitted.Count>= 16384)
@@ -338,6 +480,7 @@ public class TrailmeshMaker : MonoBehaviour
     static float al = Mathf.Exp(-0.082f);
     static float bet = Mathf.Exp(0.040f);
     static float gm = Mathf.Exp(0.042f);
+    static public  System.Random rndgen = new System.Random();
     void Start()
     {
         /*trackData frc = new trackData();
@@ -362,7 +505,8 @@ public class TrailmeshMaker : MonoBehaviour
     public static float DrawExp(float ilam)
     {
         if (ilam <= 0) ilam = 0.01f;
-        float ran = UnityEngine.Random.value;
+        float ran = (float)rndgen.NextDouble() ;
+       
         float ret = -Mathf.Log(1.0f - ran) *ilam ;
         if (ret > ilam * 10000) return ilam * 10000;
         return ret;
@@ -383,15 +527,30 @@ public class TrailmeshMaker : MonoBehaviour
        float cosn = Vector3.Dot(adj1, adj2) / (adj1.magnitude * adj2.magnitude);
        return scatterprob(cosn);
     }
+    static public Vector3 onUnitSphere()
+    {
+        while (true)
+        {
+            Vector3 vct = new Vector3((float)(rndgen.NextDouble() * 2 - 1), (float)(rndgen.NextDouble() * 2 - 1), (float)(rndgen.NextDouble() * 2 - 1));
+            var mag = vct.magnitude;
+            if (mag <= 1 && mag > 0.0001f)
+            {
+            
+                return vct / mag;
+            }
+        }
+    }
+    // Start is called before the first frame update
+    
     public static Vector3 Scatter(Vector3 inc)
     {
         int cnt = 0;
         while(true)
         {
-            Vector3 rd = UnityEngine.Random.onUnitSphere;
+            Vector3 rd = onUnitSphere();
             float prob = scatterdirprob(inc, rd);
            
-            if (prob>= UnityEngine.Random.value*40)
+            if (prob>= rndgen.NextDouble()*40)
             {
                 //Debug.LogFormat("Prob: {0}",prob);
                 return rd;
