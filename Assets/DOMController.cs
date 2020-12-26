@@ -129,6 +129,7 @@ public class ballIntegratedData
     }
 }
 [MessagePackObject]
+[System.Serializable]
 public class trackData :IEquatable<trackData>
 {
     [Key(0)]
@@ -831,8 +832,13 @@ curEvent = new List<eventData>();
             if(trackmesh!=null)
             {
                 var desc = EventRestAPI.Instance.currentEvent.description;
-                //trackmesh.MaybeRecreateMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir/tdir.magnitude, 5000, 10);
-                trackmesh.MaybeRecreateProperMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir / tdir.magnitude, 5000, 10, track.rec_t0);
+                MultimeshObject mesh = EventRestAPI.Instance.DemandMMesh(desc);
+                if(mesh!=null)
+                {
+                    trackmesh.UseMesh((int)desc.run, (int)desc.evn,mesh);
+                }
+               //trackmesh.MaybeRecreateMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir/tdir.magnitude, 5000, 10);
+               //trackmesh.MaybeRecreateProperMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir / tdir.magnitude, 5000, 10, track.rec_t0);
                 Debug.LogFormat("Tdir {0}",tdir);
             }
             //ref1.gameObject.transform.localPosition;
@@ -875,7 +881,7 @@ curEvent = new List<eventData>();
                     rtt= Quaternion.LookRotation(lhs, rhs);
                 trackmesh.gameObject.transform.localRotation = rtt;// Quaternion.LookRotation(un_pos0 - un); 
                 trackmesh.gameObject.transform.localScale = new Vector3(0.1f,0.1f,0.1f);*/
-                Debug.LogFormat("Setting meshtimescale: {0} {1}", inv, (t1 - track.rec_t0));
+               // Debug.LogFormat("Setting meshtimescale: {0} {1}", inv, (t1 - track.rec_t0));
             }
             Vector3 un_pos1 = inv.MultiplyPoint3x4(ice_pos);
             Quaternion rot=Quaternion.LookRotation(un_pos0-un_pos1);

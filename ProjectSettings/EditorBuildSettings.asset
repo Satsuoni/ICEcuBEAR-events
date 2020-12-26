@@ -9,5 +9,9 @@ EditorBuildSettings:
     path: Assets/GoogleARCore/Examples/HelloAR/Scenes/IceCubeARScene.unity
     guid: a4d74e17a3e5884428771f1196d1430e
   m_configObjects:
+    UnityEditor.XR.ARCore.ARCoreSettings: {fileID: 11400000, guid: 5ca99171ae9f69c48a43671cffce492a,
+      type: 2}
+    UnityEditor.XR.ARKit.ARKitSettings: {fileID: 11400000, guid: 88eb766440f90684fbda577c530af7be,
+      type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: b85ea3376cd91c549ad982261cdbdca1,
       type: 2}

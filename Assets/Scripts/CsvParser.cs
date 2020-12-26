@@ -26,6 +26,8 @@ public class CsvParser : MonoBehaviour {
 	   return ret;
 	}
 	void Start () {
+        MultimeshObject output = new MultimeshObject();
+        output.meshes = new List<Meshobject>();
 		//string meshPath="Assets/csmesh800/cmesh800_";
 	 string fs = csvFile.text;
          string[] fLines = Regex.Split ( fs, "\n|\r|\r\n" );	
@@ -75,15 +77,20 @@ public class CsvParser : MonoBehaviour {
 	 {
 	 if(curMesh!=en.meshnum)
           {
+                Meshobject msh = new Meshobject(verts.ToArray(), uvs.ToArray(), indc.ToArray());
+                output.meshes.Add(msh);
+                //msh.indices = indc.ToArray();
+               // msh.verts = verts.ToArray();
+               // msh.uvs = uvs.ToArray();
            //if(curM!=null)
            // {
            // curM.vertices=verts.ToArray();
            // curM.uv=uvs.ToArray();
            // curM.colors=clrs.ToArray();
            // curM.SetIndices(indc.ToArray(),MeshTopology.Lines,0);
-		//AssetDatabase.CreateAsset(curM, meshPath + curMesh.ToString() + ".asset");
-            //}
-            verts.Clear();
+           //AssetDatabase.CreateAsset(curM, meshPath + curMesh.ToString() + ".asset");
+           //}
+                verts.Clear();
             uvs.Clear();
             clrs.Clear();
             indc.Clear();
@@ -98,22 +105,28 @@ public class CsvParser : MonoBehaviour {
         }
         else
         curId=en.id;
-	verts.Add(en.pos-avg);
+            verts.Add(en.pos);// -avg);
 	float shft=(en.time-mintime)/td;
 	uvs.Add(new Vector2(shft,0));
         clrs.Add( Color.Lerp(Color.red, Color.green, shft));
 
 	   cnt++;
 	 }
-	//if(curM!=null)
-    //        {
-     //       curM.vertices=verts.ToArray();
-     //       curM.uv=uvs.ToArray();
-     //       curM.colors=clrs.ToArray();
-      //      curM.SetIndices(indc.ToArray(),MeshTopology.Lines,0);
-//			AssetDatabase.CreateAsset(curM, meshPath + curMesh.ToString() + ".asset");
-//            }
-		//
+     if (verts.Count>=2 && indc.Count>0)
+        {
+            Meshobject msh = new Meshobject(verts.ToArray(), uvs.ToArray(), indc.ToArray());
+            output.meshes.Add(msh);
+        }
+        //if(curM!=null)
+        //        {
+        //       curM.vertices=verts.ToArray();
+        //       curM.uv=uvs.ToArray();
+        //       curM.colors=clrs.ToArray();
+        //      curM.SetIndices(indc.ToArray(),MeshTopology.Lines,0);
+        //			AssetDatabase.CreateAsset(curM, meshPath + curMesh.ToString() + ".asset");
+        //            }
+        //
+        output.SaveToFile(Application.persistentDataPath + "/" + "csvparsed.gz");
 	}
 	
 	// Update is called once per frame
