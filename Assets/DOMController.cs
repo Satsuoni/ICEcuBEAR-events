@@ -272,6 +272,8 @@ public class DOMController : MonoBehaviour
     Slider timeController;
     TimeSlider playbackController;
     Slider zoomControl;
+    Slider hairControl;
+    GameObject hairCover=null;
     Toggle towerControl;
     const int timeSpans = 2500;
     public Transform footPoint;
@@ -299,6 +301,7 @@ public class DOMController : MonoBehaviour
     public GameObject fluxball;
     public GameObject tower;
     public TrackMeshMaker trackmesh;
+   
     void Start()
     {
         ftrack.eid = new KeyValuePair<int, int>(132974, 67924813);
@@ -356,6 +359,17 @@ curEvent = new List<eventData>();
             if(zoomControl!=null)
             {
                 zoomControl.onValueChanged.AddListener(delegate { zoomChange(); });
+            }
+        }
+        GameObject hCon = GameObject.Find("hairController");
+        if (hCon != null)
+        {
+            hairControl = hCon.GetComponent<Slider>();
+            hairCover = hCon.transform.parent.gameObject;
+            if (hairControl != null)
+            {
+                hairControl.onValueChanged.AddListener(delegate { hairChange(); });
+                hairChange();
             }
         }
 
@@ -820,9 +834,32 @@ curEvent = new List<eventData>();
                 Debug.Log("Need cone and pole");
                 return;
             }
+            if(trackmesh!=null)
+            {
+                if(EventRestAPI.Instance.currentEvent!=null)
+                {
+                    var desc = EventRestAPI.Instance.currentEvent.description;
+                    var eid = new KeyValuePair<long, long>(desc.run,desc.evn);
+                    if(EventRestAPI.Instance.eventHasSim(eid))
+                    {
+                        if (hairControl != null)
+                        {
+                            hairCover?.SetActive(true);
+                        }
+                    }
+                    else
+                    {
+                        if (hairControl != null)
+                        {
+                            hairCover?.SetActive(false);
+                        }
+                    }
+                    
 
+                }
+            }
            // Debug.Log(atime);
-            //Debug.Log(track.rec_t0);
+            Debug.LogFormat("Trackt0 {0} atime: {1}",track.rec_t0,atime);
             if (track.rec_t0 > atime) return;
             Vector3 tdir = new Vector3(Mathf.Sin(track.zen_rad)*Mathf.Cos(track.azi_rad), Mathf.Sin(track.zen_rad) * Mathf.Sin(track.azi_rad), Mathf.Cos(track.zen_rad));
             float vel = 0.299792458f;/// ni;
@@ -833,9 +870,16 @@ curEvent = new List<eventData>();
             {
                 var desc = EventRestAPI.Instance.currentEvent.description;
                 MultimeshObject mesh = EventRestAPI.Instance.DemandMMesh(desc);
-                if(mesh!=null)
+                Debug.LogFormat("DMesh {0}", mesh);
+                if (mesh!=null)
                 {
                     trackmesh.UseMesh((int)desc.run, (int)desc.evn,mesh);
+                  
+                }
+                else
+                {
+                    trackmesh.Clear();
+                    
                 }
                //trackmesh.MaybeRecreateMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir/tdir.magnitude, 5000, 10);
                //trackmesh.MaybeRecreateProperMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir / tdir.magnitude, 5000, 10, track.rec_t0);
@@ -893,6 +937,17 @@ curEvent = new List<eventData>();
             cone.transform.localPosition = un_pos1;
 
         }
+        else
+        {
+            if (hairControl != null)
+            {
+                hairCover?.SetActive(false);
+            }
+            if (trackmesh != null)
+            {
+                trackmesh.Clear();
+            }
+        }
     }
     public void ValueChange()
     {
@@ -903,6 +958,13 @@ curEvent = new List<eventData>();
         if (towerControl!=null&&tower!=null)
         {
             tower.SetActive(towerControl.isOn);
+        }
+    }
+    public void hairChange()
+    {
+        if (trackmesh!=null&&hairControl!=null&&trackmesh.HasMesh())
+        {
+            trackmesh.SetTimeWidth(hairControl.value); 
         }
     }
         public void zoomChange()

@@ -84,6 +84,10 @@ public class TrackMeshMaker : MonoBehaviour
     {
         trackMaterial?.SetFloat("timeScale", scale);
     }
+    public void SetTimeWidth(float width)
+    {
+        trackMaterial?.SetFloat("timeWidth", width);
+    }
     public void SetTime(float time)
     {
         trackMaterial?.SetFloat("mytime", time);
@@ -92,6 +96,18 @@ public class TrackMeshMaker : MonoBehaviour
     void Update()
     {
         
+    }
+    public void Clear()
+    {
+        foreach (Transform tr in gameObject.transform)
+        {
+            Destroy(tr.gameObject);
+        }
+        data = null;
+    }
+    public bool HasMesh()
+    {
+        return data != null;
     }
     public void SpawnChildren()
     {
