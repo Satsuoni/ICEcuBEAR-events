@@ -106,7 +106,7 @@ public class CsvParser : MonoBehaviour {
         else
         curId=en.id;
             verts.Add(en.pos);// -avg);
-	float shft=(en.time-mintime)/td;
+	float shft=(en.time-mintime);
 	uvs.Add(new Vector2(shft,0));
         clrs.Add( Color.Lerp(Color.red, Color.green, shft));
 

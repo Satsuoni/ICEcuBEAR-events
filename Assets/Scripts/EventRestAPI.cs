@@ -1180,6 +1180,7 @@ public class EventRestAPI : MonoBehaviour
             ExtraSimData s = simcache.getItem(evid);
             return s.mesh;
         }
+        Debug.LogFormat("Event {0} {1} not found in simcache!",evid.Key,evid.Value);
         StartCoroutine(simulateSingleEvent(ev));
         return null;
     }
@@ -1196,15 +1197,24 @@ public class EventRestAPI : MonoBehaviour
         string dir = Application.persistentDataPath + "/";
         evId evid = new evId(ev.run, ev.evn);
         if (!eventHasSim(evid)) yield break;
+    
         if (simcache.checkCache(evid))
         {
             ExtraSimData s = simcache.getItem(evid);
-            if (s.mesh != null) yield break;
+            if (s.mesh != null)
+            {  yield break; }
+                
         }
         // currently, only built-in Millipede! TODO...
         HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(evid);
-        if (dat == null) yield break;
-        if(dat.meshFile!=null)
+        if (dat == null)
+        {
+           
+            yield break;
+        }
+  
+
+        if (dat.meshFile!=null)
         {
             ExtraSimData s = new ExtraSimData();
             LoadMeshfile job = new LoadMeshfile();
@@ -1215,16 +1225,15 @@ public class EventRestAPI : MonoBehaviour
             if(!job.outSuccess)
             {
                 Debug.Log("Invalid hardcoded file!");
+             
                 yield break;
             }
             s.mesh = job.OutData;
             simcache.pushItem(evid, s);
+           
             yield break;
         }
-        while (!_lock(evid))
-        {
-            yield return null;
-        }
+       
         if (!savedIndex.ContainsKey(evid))
             yield return StartCoroutine(loadAndSaveSingleEvent(ev,false,true));
         string fname = Application.persistentDataPath+'/'+String.Format("{0}_{1}_trail.gz", ev.run, ev.evn);
@@ -1238,7 +1247,7 @@ public class EventRestAPI : MonoBehaviour
             yield return StartCoroutine(job.WaitFor());
             if (!job.outSuccess)
             {
-                _unlock(evid);
+               
                 yield return StartCoroutine(simulateSingleEvent(ev, saveMeshfile));
                 yield break;
             }
@@ -1261,7 +1270,7 @@ public class EventRestAPI : MonoBehaviour
             s.mesh = job.OutData;
             simcache.pushItem(evid, s);
         }
-        _unlock(evid);
+       
     }
     //preferably, only process event here to avoid races, etc;
     IEnumerator loadAndSaveSingleEvent(eventDesc ev,bool saveInt=true,bool saveCSV=true)
@@ -1292,6 +1301,7 @@ public class EventRestAPI : MonoBehaviour
         SavedEventData sdat = null;
         loaderData.task = "Get data";
         UpdateLoading();
+        HardcodedEventData hdat = HardcodedEvents.instance.GetHardcoded(evid);
         if (savedIndex.ContainsKey(evid))
         {
             loaderData.task = "Reload data";
@@ -1333,7 +1343,7 @@ public class EventRestAPI : MonoBehaviour
             if(sdat.csvName!=null)
             {
                 string fcsv = dir + sdat.csvName;
-                HardcodedEventData hdat = HardcodedEvents.instance.GetHardcoded(evid);
+              
                 if (File.Exists(fcsv)||(hdat!=null&&hdat.csvFile!=null))
                 {
                     string csvText = null;
@@ -1409,77 +1419,93 @@ public class EventRestAPI : MonoBehaviour
             sdat.hashname = null;
 
         }
-        string url = String.Format("{0}/{1}/{2}/{3}", mainURL, efile, ev.run, ev.evn);
-        using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+             string url = String.Format("{0}/{1}/{2}/{3}", mainURL, efile, ev.run, ev.evn);
+        string csvdata=null;
+        if (hdat != null && hdat.csvFile != null)
         {
-            // Request and wait for the desired page.
-            //webRequest.chunkedTransfer = false;
-            loaderData.task = "Load datafile";
-            UpdateLoading();
-            yield return webRequest.SendWebRequest();
-           if (webRequest.isNetworkError|| webRequest.isHttpError)
+            csvdata = hdat.csvFile.text;
+        }
+        else
+        {
+            using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
             {
-
-                Debug.Log("Error getting  " + url + " :" + webRequest.error);
-                sdat.status = "Failed download";
-                if (!savedIndex.ContainsKey(evid))
-                {
-                    savedIndex[evid] = sdat;
-                    settings.eventData.Add(sdat);
-                    saveSettings();
-                }
-                _unlock(evid);
-                loaderData.task = "CSV: Network failure";
+                // Request and wait for the desired page.
+                //webRequest.chunkedTransfer = false;
+                loaderData.task = "Load datafile";
                 UpdateLoading();
-                yield break;
-            }
-            else
-            {
-                loaderData.task = "Process datafile";
-                loaderData.secondaryCount += 1;
-                UpdateLoading();
-                ProcessEventCsv job = new ProcessEventCsv();
-                job.eDesc = ev;
-                job.saveCsv = saveCSV;
-                job.saveIntegrated = saveInt;
-                job.eMessage = null;
-                job.InData = webRequest.downloadHandler.text;
-                job.persistPath = Application.persistentDataPath;
-
-                job.Start();
-                yield return StartCoroutine(job.WaitFor());
-                if (job.eMessage != null) { Debug.Log(job.eMessage); }
-                if (job.OutData==null)
+                yield return webRequest.SendWebRequest();
+                if (webRequest.isNetworkError || webRequest.isHttpError)
                 {
-                    loaderData.task = "Failed processing";
-                    sdat.status = "Failed processing";
-                    if(!savedIndex.ContainsKey(evid))
+
+                    Debug.Log("Error getting  " + url + " :" + webRequest.error);
+                    sdat.status = "Failed download";
+                    if (!savedIndex.ContainsKey(evid))
                     {
                         savedIndex[evid] = sdat;
                         settings.eventData.Add(sdat);
                         saveSettings();
                     }
                     _unlock(evid);
+                    loaderData.task = "CSV: Network failure";
                     UpdateLoading();
                     yield break;
                 }
-                cache.pushItem(evid, job.OutData);
-                sdat.hashname = job.hashName;
-                sdat.csvHash = job.csvHash;
-                sdat.csvName = job.csvName;
-                sdat.integrationSteps = job.timeSpans;
-                if (!savedIndex.ContainsKey(evid))
+                else
                 {
-                    savedIndex[evid] = sdat;
-                    settings.eventData.Add(sdat);
-                    saveSettings();
-                }
-                if (!loaderData.mainLifecycle)
-                {
-                    loaderData.primaryCount = 1;
-                    UpdateLoading();
+csvdata = webRequest.downloadHandler.text;
                 }
             }
+        }
+        if(csvdata==null)
+        {
+            loaderData.task = "CSV: Network failure";
+            UpdateLoading();
+            yield break;
+
+        }
+        loaderData.task = "Process datafile";
+        loaderData.secondaryCount += 1;
+        UpdateLoading();
+        ProcessEventCsv hjob = new ProcessEventCsv();
+        hjob.eDesc = ev;
+        hjob.saveCsv = saveCSV;
+        hjob.saveIntegrated = saveInt;
+        hjob.eMessage = null;
+        hjob.InData = csvdata;
+        hjob.persistPath = Application.persistentDataPath;
+
+        hjob.Start();
+        yield return StartCoroutine(hjob.WaitFor());
+        if (hjob.eMessage != null) { Debug.Log(hjob.eMessage); }
+        if (hjob.OutData == null)
+        {
+            loaderData.task = "Failed processing";
+            sdat.status = "Failed processing";
+            if (!savedIndex.ContainsKey(evid))
+            {
+                savedIndex[evid] = sdat;
+                settings.eventData.Add(sdat);
+                saveSettings();
+            }
+            _unlock(evid);
+            UpdateLoading();
+            yield break;
+        }
+        cache.pushItem(evid, hjob.OutData);
+        sdat.hashname = hjob.hashName;
+        sdat.csvHash = hjob.csvHash;
+        sdat.csvName = hjob.csvName;
+        sdat.integrationSteps = hjob.timeSpans;
+        if (!savedIndex.ContainsKey(evid))
+        {
+            savedIndex[evid] = sdat;
+            settings.eventData.Add(sdat);
+            saveSettings();
+        }
+        if (!loaderData.mainLifecycle)
+        {
+            loaderData.primaryCount = 1;
+            UpdateLoading();
         }
         _unlock(evid);
     }
@@ -1738,6 +1764,9 @@ public class EventRestAPI : MonoBehaviour
         {
             Debug.Log(string.Format("Events are shrinking?, {0} currently, {1} before", nevents, oldEventNum));
             loaderData.counter = 0;
+            loaderData.primaryCount =0;
+            loaderData.secondaryCount = 0;
+            UpdateLoading();
             yield break;
         }
         Int64 delta = nevents - oldEventNum;
@@ -2061,14 +2090,14 @@ public class EventRestAPI : MonoBehaviour
         StartCoroutine(loadNotifiedEvents());
         // Run update on hardcoded events
         yield return StartCoroutine(HardcodedUpdate());
-
+        yield return StartCoroutine(HardcodedSimulate());
         //5. Run network update for eventnum we don't seem to have. Save up to set number of files from new ones.
         yield return StartCoroutine(OptimisticUpdate());
         pruneFiles();
         cache.Prune();
         //6. Run a full network update (with paging) as coroutine to fill up gaps if any
         yield return StartCoroutine(runFullUpdate());
-        yield return StartCoroutine(HardcodedSimulate());
+       
         //7.Download files and process files to fill up settings quota.
         _lifecycleReady = true;
   
@@ -2290,9 +2319,14 @@ public class EventRestAPI : MonoBehaviour
     }
     public trackData forcedTracks(evId id)
     {
+        Debug.Log("Getting forced tracks");
         HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(id);
         if (dat == null) return null;
-        if (dat.tracks.Length > 0) return dat.tracks[0];
+        if (dat.tracks.Length > 0)
+        {
+            Debug.Log("Got forced tracks");
+            return dat.tracks[0];
+        }
                 return null;
        // trackData frc=null;
       /*if(id.Key== 133119&&id.Value== 22683750)
