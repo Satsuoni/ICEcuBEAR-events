@@ -96,7 +96,7 @@ public class MultimeshObject
             data.Add(msh.ToJson());
         }
             using (Stream stream = File.OpenWrite(fname))
-            using (var writer = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Compress, SharpCompress.Compressors.Deflate.CompressionLevel.BestCompression))
+            using (var writer = new GZipStream(stream, SharpCompress.Compressors.CompressionMode.Compress, SharpCompress.Compressors.Deflate.CompressionLevel.Level5))
             {
                 byte[] bt = Encoding.ASCII.GetBytes(data.ToString());
                 writer.Write(bt, 0, bt.Length);

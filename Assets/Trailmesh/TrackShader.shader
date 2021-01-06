@@ -62,8 +62,9 @@
 	    float scaledMyTime = mytime / timeScale;
 		float2 timeline = clamp(scaledPixelTime,0,1);
 		float4 col = tex2D(gradient, timeline);
+		float4 truecol = col * (1 - i.uv.y) + (float4(1, 1, 1, 0) - col)*i.uv.y;
 		clip(timeWidth - abs(scaledPixelTime - scaledMyTime + timeWidth));
-		return col;// i.color*exp(-_Time.x*0.1);
+		return truecol;// i.color*exp(-_Time.x*0.1);
 	}
 		ENDCG
 	}

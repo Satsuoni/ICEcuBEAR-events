@@ -59,7 +59,7 @@ public class SingleString : MonoBehaviour
          float noteal = minKey + winding + ballstep * (ballnum-1);
         int note = Mathf.FloorToInt(noteal);
 #if UNITY_EDITOR
-        Debug.LogFormat("Hitting {0} on {1}", note,bank.GetPatch(0, programNum).Name);
+      //  Debug.LogFormat("Hitting {0} on {1}", note,bank.GetPatch(0, programNum).Name);
 #endif
         // Debug.LogFormat("Hitting note: {0} {1} {2},   {3} {4}",note,ballnum,minKey,ballstep,winding);
         synthesizer.NoteOffAll(false);

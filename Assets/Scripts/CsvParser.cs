@@ -11,7 +11,9 @@ public int id;
 public int meshnum;
 }
 public class CsvParser : MonoBehaviour {
-   public TextAsset csvFile;
+    int[] jet = new int[] { 12, 22, 24, 29, 44, 51, 55, 64, 84, 105, 106, 136, 156, 160, 165, 175, 182, 190, 196, 200, 261, 263, 269, 287, 293, 299, 307, 314, 315, 319, 360, 368, 373, 374, 387 };
+    public TextAsset csvFile;
+    public Vector3 offset;
    List <PosEntry> lst=new List<PosEntry>();
 	// Use this for initialization
 	PosEntry entryFromLine(string line)
@@ -105,9 +107,17 @@ public class CsvParser : MonoBehaviour {
         }
         else
         curId=en.id;
-            verts.Add(en.pos);// -avg);
+            verts.Add(en.pos+offset);// -avg);
 	float shft=(en.time-mintime);
-	uvs.Add(new Vector2(shft,0));
+            if (System.Array.IndexOf(jet, en.id) > -1)
+            {
+                //ccolor.b = 0.8f;
+                uvs.Add(new Vector2(shft, 1));
+            }
+            else
+            {
+                uvs.Add(new Vector2(shft, 0));
+            }
         clrs.Add( Color.Lerp(Color.red, Color.green, shft));
 
 	   cnt++;

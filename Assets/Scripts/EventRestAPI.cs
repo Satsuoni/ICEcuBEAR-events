@@ -16,6 +16,8 @@ using SharpCompress.Writers;
 using SharpCompress.Common;
 using SharpCompress.Archives.GZip;
 using SharpCompress.Compressors.Deflate;
+using Unity.Jobs;
+using Unity.Collections;
 
 public delegate void EventListUpdatedHandler();
 public delegate void CurrentEventChangedHandler();
@@ -276,6 +278,14 @@ private void Run()
     IsDone = true;
 }
  }
+/* public struct LoadMeshJob : IJob
+{
+    public byte[] fname;
+    [ReadOnly]
+    public NativeArray<byte> loaded;
+    public NativeArray<MultimeshObject> OutData;
+}*/
+
 
 public class LoadMeshfile : ThreadedJob
 {
