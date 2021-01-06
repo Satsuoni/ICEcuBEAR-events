@@ -18,6 +18,7 @@ using SharpCompress.Archives.GZip;
 using SharpCompress.Compressors.Deflate;
 using Unity.Jobs;
 using Unity.Collections;
+using System.Threading;
 
 public delegate void EventListUpdatedHandler();
 public delegate void CurrentEventChangedHandler();
@@ -221,7 +222,7 @@ public class ThreadedJob
      private bool m_IsDone = false;
 private object m_Handle = new object();
     protected static object m_Lock = new object();
-    private System.Threading.Thread m_Thread = null;
+   // private System.Threading.Thread m_Thread = null;
 public bool IsDone
 {
     get
@@ -244,12 +245,13 @@ public bool IsDone
 
 public virtual void Start()
 {
-    m_Thread = new System.Threading.Thread(Run);
-    m_Thread.Start();
+        // m_Thread = new System.Threading.Thread(Run);
+        // m_Thread.Start();
+        ThreadPool.QueueUserWorkItem(Run);
 }
 public virtual void Abort()
 {
-    m_Thread.Abort();
+    //m_Thread.Abort();
 }
 
 protected virtual void ThreadFunction() { }
@@ -272,20 +274,50 @@ public IEnumerator WaitFor()
         yield return null;
     }
 }
-private void Run()
+private void Run(object _meh)
 {
     ThreadFunction();
     IsDone = true;
 }
  }
-/* public struct LoadMeshJob : IJob
-{
-    public byte[] fname;
-    [ReadOnly]
-    public NativeArray<byte> loaded;
-    public NativeArray<MultimeshObject> OutData;
-}*/
 
+public class AwaitedAction
+{
+    private static readonly object locker = new object();
+    private static Dictionary<evId, HashSet<Type>> runningTasks = new Dictionary<evId, HashSet<Type>>();
+    ManualResetEvent ev =new ManualResetEvent(false);
+    evId myId;
+    public evId Id
+    {
+        get { return myId; }
+    }
+    public AwaitedAction(evId id)
+    {
+        
+        myId = id;
+    }
+    public bool IsDone()
+    {
+        return ev.WaitOne(0);
+    }
+    protected virtual void ThreadFunction() { }
+    private void Run(object state)
+    {
+        try
+        {
+            ThreadFunction();
+        }
+        finally
+        {
+            ev.Set();
+        }
+    }
+    public virtual void Start()
+    {
+        ThreadPool.QueueUserWorkItem(Run);
+    }
+
+}
 
 public class LoadMeshfile : ThreadedJob
 {
@@ -296,7 +328,8 @@ public class LoadMeshfile : ThreadedJob
 
     protected override void ThreadFunction()
     {
-        if(fname!=null&&loaded==null)
+      
+        if (fname!=null&&loaded==null)
         {
             if (File.Exists(fname))
             {
@@ -332,6 +365,94 @@ public class LoadMeshfile : ThreadedJob
 
     }
 }
+public enum Wactions
+{
+    Update,
+    Load,
+
+}
+public class ReentranceGuard : IDisposable
+{
+    static object locked = new object();
+    static HashSet<string> _labels=new HashSet<string>();
+    string mylabel;
+    bool _failedMiserably = false;
+    public static implicit operator bool(ReentranceGuard obj)
+    {
+        return !obj._failedMiserably;
+    }
+    public ReentranceGuard(string label)
+    {
+        if (_labels.Contains(label))
+        {
+            //   throw new ArgumentException("Reentry", label);
+            mylabel = label;
+            _failedMiserably = true;
+        }
+        lock (locked)
+        {
+            mylabel = label;
+            _labels.Add(mylabel);
+        }
+    }
+    void IDisposable.Dispose() {
+        lock (locked)
+        {
+            if(!_failedMiserably)
+            _labels.Remove(mylabel);
+        }
+
+        }
+}
+public class ReActionGuard : IDisposable
+{
+    static object locked = new object();
+    static Dictionary<evId, HashSet<string>> _actions = new Dictionary<evId, HashSet<string>>();
+    string mylabel;
+    evId myId;
+    bool _failedMiserably = false;
+    public static implicit operator bool(ReActionGuard obj)
+    {
+        return !obj._failedMiserably;
+    }
+    public ReActionGuard(evId id, string label)
+    {
+        HashSet<string> outp;
+        if (_actions.TryGetValue(id,out outp))
+        {
+            if (outp.Contains(label))
+            {
+                _failedMiserably = true;
+            }
+        }
+        lock (locked)
+        {
+            mylabel = label;
+            myId = id;
+            if (_actions.TryGetValue(id, out outp))
+            {
+                outp.Add(label);
+            }
+            else
+            {
+                _actions[myId] = new HashSet<string>();
+                _actions[myId].Add(label);
+            }
+        }
+    }
+    void IDisposable.Dispose()
+    {
+        lock (locked)
+        {
+            if (!_failedMiserably)
+            {
+                _actions[myId].Remove(mylabel);
+            }
+        }
+
+    }
+}
+
 public class SimulateMillipede : ThreadedJob
 {
     public string persistPath;
@@ -464,7 +585,8 @@ public class SimulateMillipede : ThreadedJob
         MuonTrack tr = new MuonTrack(initialPos, heading, duration, 0.299792458f, 1, cdat);//emrate
         OutData = tr.Simulate();
         string fname = String.Format("{0}_{1}_trail.gz", eDesc.run,eDesc.evn);
-        if(saveMeshfile)
+        Debug.LogFormat("Simulated, saving..: {0} ", fname);
+        if (saveMeshfile)
            OutData.SaveToFile(persistPath + "/" +fname);
     }
 }
@@ -1168,7 +1290,7 @@ public class EventRestAPI : MonoBehaviour
         get { return _currentEvent; }
     }
     //primitive lock
-    HashSet<evId> __locks = new HashSet<evId>();
+    /*HashSet<evId> __locks = new HashSet<evId>();
     bool _lock(evId id)
     {
         if(__locks==null) __locks = new HashSet<evId>();
@@ -1180,7 +1302,7 @@ public class EventRestAPI : MonoBehaviour
     {
         if (__locks == null) __locks = new HashSet<evId>();
         if (__locks.Contains(id)) __locks.Remove(id);
-    }
+    }*/
     public MultimeshObject DemandMMesh(eventDesc ev )
     {
         evId evid = new evId(ev.run, ev.evn);
@@ -1206,318 +1328,345 @@ public class EventRestAPI : MonoBehaviour
         if (ev == null) yield break;
         string dir = Application.persistentDataPath + "/";
         evId evid = new evId(ev.run, ev.evn);
-        if (!eventHasSim(evid)) yield break;
-    
-        if (simcache.checkCache(evid))
+        using (ReActionGuard r = new ReActionGuard(evid,"resimulate"))
         {
-            ExtraSimData s = simcache.getItem(evid);
-            if (s.mesh != null)
-            {  yield break; }
-                
-        }
-        // currently, only built-in Millipede! TODO...
-        HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(evid);
-        if (dat == null)
-        {
-           
-            yield break;
-        }
-  
-
-        if (dat.meshFile!=null)
-        {
-            ExtraSimData s = new ExtraSimData();
-            LoadMeshfile job = new LoadMeshfile();
-            job.fname = null;
-            job.loaded = dat.meshFile.bytes;
-            job.Start();
-            yield return StartCoroutine(job.WaitFor());
-            if(!job.outSuccess)
+            if (!r)
             {
-                Debug.Log("Invalid hardcoded file!");
-             
+                yield return StartCoroutine(AwaitUnlock(evid, "resimulate"));
                 yield break;
             }
-            s.mesh = job.OutData;
-            simcache.pushItem(evid, s);
-           
-            yield break;
-        }
-       
-        if (!savedIndex.ContainsKey(evid))
-            yield return StartCoroutine(loadAndSaveSingleEvent(ev,false,true));
-        string fname = Application.persistentDataPath+'/'+String.Format("{0}_{1}_trail.gz", ev.run, ev.evn);
-        if (File.Exists(fname))
-        {
-            Debug.LogFormat("Read ing meshfile {0}", fname);
-            LoadMeshfile job = new LoadMeshfile();
-            job.fname = fname;
-            job.loaded = null;
-            job.Start();
-            yield return StartCoroutine(job.WaitFor());
-            if (!job.outSuccess)
+            if (!eventHasSim(evid)) yield break;
+
+            if (simcache.checkCache(evid))
             {
-               
-                yield return StartCoroutine(simulateSingleEvent(ev, saveMeshfile));
+                ExtraSimData s = simcache.getItem(evid);
+                if (s.mesh != null)
+                { yield break; }
+
+            }
+            // currently, only built-in Millipede! TODO...
+            HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(evid);
+            if (dat == null)
+            {
+
                 yield break;
             }
-            ExtraSimData s = new ExtraSimData();
-            s.mesh = job.OutData;
-            simcache.pushItem(evid, s);
-        }
-        else
-        {
-            SimulateMillipede job = new SimulateMillipede();
-            job.eDesc = ev;
-            job.saveMeshfile = saveMeshfile;
-            job.InData = dat.millipedeFile.text;
-            job.persistPath = Application.persistentDataPath;
-            job.OutData = null;
-            job.track = ev.track;
-            job.Start();
-            yield return StartCoroutine(job.WaitFor());
-            ExtraSimData s = new ExtraSimData();
-            s.mesh = job.OutData;
-            simcache.pushItem(evid, s);
-        }
-       
-    }
-    //preferably, only process event here to avoid races, etc;
-    IEnumerator loadAndSaveSingleEvent(eventDesc ev,bool saveInt=true,bool saveCSV=true)
-    {
-        if (ev == null) yield break;
-        string dir = Application.persistentDataPath + "/";
-        evId evid = new evId(ev.run,ev.evn);
-        if (!loaderData.mainLifecycle)
-        {
-            loaderData.counter = 1;
-        }
-        if(cache.checkCache(evid))
-        {
-            loaderData.secondaryCount += 1;
-            if (!loaderData.mainLifecycle)
-            {
-                loaderData.primaryCount = 1;
-            }
-            //already have it, break;
-            yield break;
-        }
-        loaderData.task = "Lock";
-        UpdateLoading();
-        while(!_lock(evid))
-        {
-            yield return null;
-        }
-        SavedEventData sdat = null;
-        loaderData.task = "Get data";
-        UpdateLoading();
-        HardcodedEventData hdat = HardcodedEvents.instance.GetHardcoded(evid);
-        if (savedIndex.ContainsKey(evid))
-        {
-            loaderData.task = "Reload data";
-            UpdateLoading();
-            sdat = savedIndex[evid];
-            if(sdat.hashname!=null)
-            {
-                string fhash = dir + sdat.hashname;
-                if(File.Exists(fhash))
-                {
-                    try
-                    {
-                        byte[] dat = File.ReadAllBytes(fhash);
-                        fullEventData fl = MessagePackSerializer.Deserialize<fullEventData>(dat);
-                        if(fl.description.evn==ev.evn&& fl.description.run == ev.run)
-                        {
-                            //load complete
-                            cache.pushItem(evid, fl);
-                            loaderData.secondaryCount += 1;
-                            if (!loaderData.mainLifecycle)
-                            {
-                                loaderData.primaryCount = 1;
-                                UpdateLoading();
-                            }
-                            _unlock(evid);//rAII is pain
-                            yield break;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogFormat("Corrupt file? {0} {1}", sdat.hashname, e);
-                    }
-                    //couldn't load
-                    File.Delete(fhash);
 
-                }
-                sdat.hashname = null;
-            }
-            if(sdat.csvName!=null)
-            {
-                string fcsv = dir + sdat.csvName;
-              
-                if (File.Exists(fcsv)||(hdat!=null&&hdat.csvFile!=null))
-                {
-                    string csvText = null;
-                    try
-                    {
-                        byte[] csvBytes;
-                        if (hdat != null && hdat.csvFile != null)
-                            csvBytes = hdat.csvFile.bytes;
-                        else
-                            csvBytes = File.ReadAllBytes(fcsv);
-                        string hash = Utilz.GenerateSHA256(csvBytes);
-                        if(sdat.csvHash==null || hash!=sdat.csvHash)
-                        { Debug.Log("Invalid csv hash"); csvText = null; }
-                        else
-                        csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
-                        loaderData.task = "Read datafile";
-                        UpdateLoading();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogFormat("Corrupt csv? {0} {1}", sdat.csvName, e);
-                        csvText = null;
-                    }
-                    if (csvText != null)
-                    {
-                        loaderData.task = "Process data";
-                        ProcessEventCsv job = new ProcessEventCsv();
-                        job.eDesc = ev;
-                        job.eMessage = null;
-                        job.InData = csvText;
-                        job.saveIntegrated = saveInt;
-                        job.saveCsv = false;
-                        job.persistPath = Application.persistentDataPath;
-                        UpdateLoading();
-                        job.Start();
-                        sdat.status = "Processing";
-                        yield return StartCoroutine(job.WaitFor());
-                        if (job.eMessage != null)
-                        {
-                            Debug.Log(job.eMessage);
-                        }
-                        if (job.OutData == null)
-                        {
-                            Debug.Log("Failed processing");
-                            loaderData.task = "Failed processing";
-                            UpdateLoading();
-                        }
-                        else
-                        {
-                            cache.pushItem(evid, job.OutData);
-                            sdat.hashname = job.hashName;
-                            sdat.integrationSteps = job.timeSpans;
-                            _unlock(evid);
-                            loaderData.secondaryCount += 1;
-                            if (!loaderData.mainLifecycle)
-                            {
-                                loaderData.primaryCount = 1;
-                            }
-                            UpdateLoading();
-                            yield break;
-                        }
-                    }
-                }
-                 sdat.csvName = null;
-            }
-        }
-        else
-        {
-            sdat = new SavedEventData();
-            sdat.description = ev;
-            sdat.csvName = null;
-            sdat.csvHash = null;
-            sdat.hashname = null;
 
-        }
-             string url = String.Format("{0}/{1}/{2}/{3}", mainURL, efile, ev.run, ev.evn);
-        string csvdata=null;
-        if (hdat != null && hdat.csvFile != null)
-        {
-            csvdata = hdat.csvFile.text;
-        }
-        else
-        {
-            using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+            if (dat.meshFile != null)
             {
-                // Request and wait for the desired page.
-                //webRequest.chunkedTransfer = false;
-                loaderData.task = "Load datafile";
-                UpdateLoading();
-                yield return webRequest.SendWebRequest();
-                if (webRequest.isNetworkError || webRequest.isHttpError)
+                ExtraSimData s = new ExtraSimData();
+                LoadMeshfile job = new LoadMeshfile();
+                job.fname = null;
+                job.loaded = dat.meshFile.bytes;
+                job.Start();
+                yield return StartCoroutine(job.WaitFor());
+                if (!job.outSuccess)
                 {
+                    Debug.Log("Invalid hardcoded file!");
 
-                    Debug.Log("Error getting  " + url + " :" + webRequest.error);
-                    sdat.status = "Failed download";
-                    if (!savedIndex.ContainsKey(evid))
-                    {
-                        savedIndex[evid] = sdat;
-                        settings.eventData.Add(sdat);
-                        saveSettings();
-                    }
-                    _unlock(evid);
-                    loaderData.task = "CSV: Network failure";
-                    UpdateLoading();
                     yield break;
                 }
-                else
+                s.mesh = job.OutData;
+                simcache.pushItem(evid, s);
+
+                yield break;
+            }
+
+            if (!savedIndex.ContainsKey(evid))
+                yield return StartCoroutine(loadAndSaveSingleEvent(ev, false, true));
+            string fname = Application.persistentDataPath + '/' + String.Format("{0}_{1}_trail.gz", ev.run, ev.evn);
+            if (File.Exists(fname))
+            {
+                Debug.LogFormat("Reading meshfile {0}", fname);
+                LoadMeshfile job = new LoadMeshfile();
+                job.fname = fname;
+                job.loaded = null;
+                job.Start();
+                yield return StartCoroutine(job.WaitFor());
+                if (!job.outSuccess)
                 {
-csvdata = webRequest.downloadHandler.text;
+
+                   // yield return StartCoroutine(simulateSingleEvent(ev, saveMeshfile));
+                    yield break;
                 }
+                ExtraSimData s = new ExtraSimData();
+                s.mesh = job.OutData;
+                simcache.pushItem(evid, s);
+            }
+            else
+            {
+                SimulateMillipede job = new SimulateMillipede();
+                job.eDesc = ev;
+                job.saveMeshfile = saveMeshfile;
+                job.InData = dat.millipedeFile.text;
+                job.persistPath = Application.persistentDataPath;
+                job.OutData = null;
+                job.track = ev.track;
+                job.Start();
+                yield return StartCoroutine(job.WaitFor());
+                ExtraSimData s = new ExtraSimData();
+                s.mesh = job.OutData;
+                simcache.pushItem(evid, s);
             }
         }
-        if(csvdata==null)
+    }
+    IEnumerator AwaitUnlock(evId evid,string label)
+    {
+        using (ReActionGuard r = new ReActionGuard(evid, label))
         {
-            loaderData.task = "CSV: Network failure";
-            UpdateLoading();
-            yield break;
-
+            if (!r) yield return null;
         }
-        loaderData.task = "Process datafile";
-        loaderData.secondaryCount += 1;
-        UpdateLoading();
-        ProcessEventCsv hjob = new ProcessEventCsv();
-        hjob.eDesc = ev;
-        hjob.saveCsv = saveCSV;
-        hjob.saveIntegrated = saveInt;
-        hjob.eMessage = null;
-        hjob.InData = csvdata;
-        hjob.persistPath = Application.persistentDataPath;
-
-        hjob.Start();
-        yield return StartCoroutine(hjob.WaitFor());
-        if (hjob.eMessage != null) { Debug.Log(hjob.eMessage); }
-        if (hjob.OutData == null)
+        yield break;
+    }
+    IEnumerator AwaitUnlock(string label)
+    {
+        using (ReentranceGuard r = new ReentranceGuard(label))
         {
-            loaderData.task = "Failed processing";
-            sdat.status = "Failed processing";
+            if (!r) yield return null;
+        }
+        yield break;
+    }
+    //preferably, only process event here to avoid races, etc;
+    IEnumerator loadAndSaveSingleEvent(eventDesc ev, bool saveInt = true, bool saveCSV = true)
+    {
+        yield return null;
+        if (ev == null) yield break;
+        string dir = Application.persistentDataPath + "/";
+        evId evid = new evId(ev.run, ev.evn);
+        using (ReActionGuard r = new ReActionGuard(evid, "loadAndSaveSingleEvent"))
+        {
+            if(!r)
+            {
+                yield return StartCoroutine(AwaitUnlock(evid, "loadAndSaveSingleEvent"));
+                yield break;
+            }
+            if (!loaderData.mainLifecycle)
+            {
+                loaderData.counter = 1;
+            }
+            if (cache.checkCache(evid))
+            {
+                loaderData.secondaryCount += 1;
+                if (!loaderData.mainLifecycle)
+                {
+                    loaderData.primaryCount = 1;
+                }
+                //already have it, break;
+                yield break;
+            }
+           
+            SavedEventData sdat = null;
+            loaderData.task = "Get data";
+            UpdateLoading();
+            HardcodedEventData hdat = HardcodedEvents.instance.GetHardcoded(evid);
+            if (savedIndex.ContainsKey(evid))
+            {
+                loaderData.task = "Reload data";
+                UpdateLoading();
+                sdat = savedIndex[evid];
+                if (sdat.hashname != null)
+                {
+                    string fhash = dir + sdat.hashname;
+                    if (File.Exists(fhash))
+                    {
+                        try
+                        {
+                            byte[] dat = File.ReadAllBytes(fhash);
+                            fullEventData fl = MessagePackSerializer.Deserialize<fullEventData>(dat);
+                            if (fl.description.evn == ev.evn && fl.description.run == ev.run)
+                            {
+                                //load complete
+                                cache.pushItem(evid, fl);
+                                loaderData.secondaryCount += 1;
+                                if (!loaderData.mainLifecycle)
+                                {
+                                    loaderData.primaryCount = 1;
+                                    UpdateLoading();
+                                }
+                               
+                                yield break;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogFormat("Corrupt file? {0} {1}", sdat.hashname, e);
+                        }
+                        //couldn't load
+                        File.Delete(fhash);
+
+                    }
+                    sdat.hashname = null;
+                }
+                if (sdat.csvName != null)
+                {
+                    string fcsv = dir + sdat.csvName;
+
+                    if (File.Exists(fcsv) || (hdat != null && hdat.csvFile != null))
+                    {
+                        string csvText = null;
+                        try
+                        {
+                            byte[] csvBytes;
+                            if (hdat != null && hdat.csvFile != null)
+                                csvBytes = hdat.csvFile.bytes;
+                            else
+                                csvBytes = File.ReadAllBytes(fcsv);
+                            string hash = Utilz.GenerateSHA256(csvBytes);
+                            if (sdat.csvHash == null || hash != sdat.csvHash)
+                            { Debug.Log("Invalid csv hash"); csvText = null; }
+                            else
+                                csvText = System.Text.Encoding.UTF8.GetString(csvBytes);
+                            loaderData.task = "Read datafile";
+                            UpdateLoading();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogFormat("Corrupt csv? {0} {1}", sdat.csvName, e);
+                            csvText = null;
+                        }
+                        if (csvText != null)
+                        {
+                            loaderData.task = "Process data";
+                            ProcessEventCsv job = new ProcessEventCsv();
+                            job.eDesc = ev;
+                            job.eMessage = null;
+                            job.InData = csvText;
+                            job.saveIntegrated = saveInt;
+                            job.saveCsv = false;
+                            job.persistPath = Application.persistentDataPath;
+                            UpdateLoading();
+                            job.Start();
+                            sdat.status = "Processing";
+                            yield return StartCoroutine(job.WaitFor());
+                            if (job.eMessage != null)
+                            {
+                                Debug.Log(job.eMessage);
+                            }
+                            if (job.OutData == null)
+                            {
+                                Debug.Log("Failed processing");
+                                loaderData.task = "Failed processing";
+                                UpdateLoading();
+                            }
+                            else
+                            {
+                                cache.pushItem(evid, job.OutData);
+                                sdat.integrationSteps = job.timeSpans;
+                              
+                                loaderData.secondaryCount += 1;
+                                if (!loaderData.mainLifecycle)
+                                {
+                                    loaderData.primaryCount = 1;
+                                }
+                                UpdateLoading();
+                                yield break;
+                            }
+                        }
+                    }
+                    sdat.csvName = null;
+                }
+            }
+            else
+            {
+                sdat = new SavedEventData();
+                sdat.description = ev;
+                sdat.csvName = null;
+                sdat.csvHash = null;
+                sdat.hashname = null;
+
+            }
+            string url = String.Format("{0}/{1}/{2}/{3}", mainURL, efile, ev.run, ev.evn);
+            string csvdata = null;
+            if (hdat != null && hdat.csvFile != null)
+            {
+                csvdata = hdat.csvFile.text;
+            }
+            else
+            {
+                using (UnityWebRequest webRequest = UnityWebRequest.Get(url))
+                {
+                    // Request and wait for the desired page.
+                    //webRequest.chunkedTransfer = false;
+                    loaderData.task = "Load datafile";
+                    UpdateLoading();
+                    yield return webRequest.SendWebRequest();
+                    if (webRequest.isNetworkError || webRequest.isHttpError)
+                    {
+
+                        Debug.Log("Error getting  " + url + " :" + webRequest.error);
+                        sdat.status = "Failed download";
+                        if (!savedIndex.ContainsKey(evid))
+                        {
+                            savedIndex[evid] = sdat;
+                            settings.eventData.Add(sdat);
+                            saveSettings();
+                        }
+                     
+                        loaderData.task = "CSV: Network failure";
+                        UpdateLoading();
+                        yield break;
+                    }
+                    else
+                    {
+                        csvdata = webRequest.downloadHandler.text;
+                    }
+                }
+            }
+            if (csvdata == null)
+            {
+                loaderData.task = "CSV: Network failure";
+                UpdateLoading();
+                yield break;
+
+            }
+            loaderData.task = "Process datafile";
+            loaderData.secondaryCount += 1;
+            UpdateLoading();
+            ProcessEventCsv hjob = new ProcessEventCsv();
+            hjob.eDesc = ev;
+            hjob.saveCsv = saveCSV;
+            hjob.saveIntegrated = saveInt;
+            hjob.eMessage = null;
+            hjob.InData = csvdata;
+            hjob.persistPath = Application.persistentDataPath;
+
+            hjob.Start();
+            yield return StartCoroutine(hjob.WaitFor());
+            if (hjob.eMessage != null) { Debug.Log(hjob.eMessage); }
+            if (hjob.OutData == null)
+            {
+                loaderData.task = "Failed processing";
+                sdat.status = "Failed processing";
+                if (!savedIndex.ContainsKey(evid))
+                {
+                    savedIndex[evid] = sdat;
+                    settings.eventData.Add(sdat);
+                    saveSettings();
+                }
+               
+                UpdateLoading();
+                yield break;
+            }
+            cache.pushItem(evid, hjob.OutData);
+            sdat.hashname = hjob.hashName;
+            sdat.csvHash = hjob.csvHash;
+            sdat.csvName = hjob.csvName;
+            sdat.integrationSteps = hjob.timeSpans;
             if (!savedIndex.ContainsKey(evid))
             {
                 savedIndex[evid] = sdat;
                 settings.eventData.Add(sdat);
                 saveSettings();
             }
-            _unlock(evid);
-            UpdateLoading();
-            yield break;
+            if (!loaderData.mainLifecycle)
+            {
+                loaderData.primaryCount = 1;
+                UpdateLoading();
+            }
+           
         }
-        cache.pushItem(evid, hjob.OutData);
-        sdat.hashname = hjob.hashName;
-        sdat.csvHash = hjob.csvHash;
-        sdat.csvName = hjob.csvName;
-        sdat.integrationSteps = hjob.timeSpans;
-        if (!savedIndex.ContainsKey(evid))
-        {
-            savedIndex[evid] = sdat;
-            settings.eventData.Add(sdat);
-            saveSettings();
-        }
-        if (!loaderData.mainLifecycle)
-        {
-            loaderData.primaryCount = 1;
-            UpdateLoading();
-        }
-        _unlock(evid);
+
     }
     IEnumerator loadNotifiedEvents()
     {
@@ -1651,31 +1800,74 @@ csvdata = webRequest.downloadHandler.text;
     bool gotEventNumber = false;
     Int64 nevents;
     bool gotLastEvents = false;
+
+    public class crWrapper
+    {
+        int maxStarted;
+        int finishedCount = 0;
+        int startedCount = 0;
+        List<IEnumerator> queued;
+        public crWrapper(int mx)
+        {
+            maxStarted = mx;
+            queued = new List<IEnumerator>();
+        }
+        public void Enqueue(IEnumerator e)
+        {
+            queued.Add(e);
+        }
+        IEnumerator crWrap(IEnumerator e, Action onDone) { yield return e; onDone(); }
+        public IEnumerator Await(EventRestAPI outer)
+        {
+            outer.loaderData.counter = (int)queued.Count;
+            int cnt = queued.Count;
+            Action onDone = new Action(() => { finishedCount++; });
+            while ( finishedCount < cnt)
+            {
+                while(startedCount<cnt&&startedCount-finishedCount<maxStarted)
+                {
+                    outer.StartCoroutine(crWrap(queued[startedCount], onDone));
+                    startedCount++;
+                }
+                outer.loaderData.primaryCount = finishedCount;
+                outer.loaderData.secondaryCount = startedCount;
+                outer.UpdateLoading();
+                yield return null;
+            }
+        }
+    }
+    IEnumerator crWrap(IEnumerator e, Action onStart,Action onDone) { onStart(); yield return e; onDone(); }
     public IEnumerator HardcodedUpdate()
     {
-        loaderData.counter = (int)HardcodedEvents.instance.events.Length;
-        loaderData.primaryCount = 0;
-        loaderData.secondaryCount = 0;
-        loaderData.curStatus = "Hardcoded events Update";
-        loaderData.task = "Processing...";
-        
-        foreach (HardcodedEventData dat in HardcodedEvents.instance.events)
+        using (ReentranceGuard r = new ReentranceGuard("hard_update"))
         {
-            if(dat.csvFile!=null)
+            if (!r)
             {
-                eventDesc dsc=new eventDesc();
-                dsc.baseDesc = dat.desc.baseDesc;
-                dsc.comment = dat.desc.comment;
-                dsc.energy = dat.desc.energy;
-                dsc.eventDate = dat.desc.eventDate;
-                dsc.evn = dat.evId;
-                dsc.humName = dat.desc.humName;
-                dsc.run = dat.runId;
-                yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
-                loaderData.primaryCount ++ ;
-                loaderData.secondaryCount ++ ;
-                UpdateLoading();
+                yield return StartCoroutine(AwaitUnlock("hard_update"));
+                yield break;
             }
+            loaderData.counter = (int)HardcodedEvents.instance.events.Length;
+            loaderData.primaryCount = 0;
+            loaderData.secondaryCount = 0;
+            loaderData.curStatus = "Hardcoded events Update";
+            loaderData.task = "Processing...";
+            crWrapper wrap = new crWrapper(5);
+            foreach (HardcodedEventData dat in HardcodedEvents.instance.events)
+            {
+                if (dat.csvFile != null)
+                {
+                    eventDesc dsc = new eventDesc();
+                    dsc.baseDesc = dat.desc.baseDesc;
+                    dsc.comment = dat.desc.comment;
+                    dsc.energy = dat.desc.energy;
+                    dsc.eventDate = dat.desc.eventDate;
+                    dsc.evn = dat.evId;
+                    dsc.humName = dat.desc.humName;
+                    dsc.run = dat.runId;
+                    wrap.Enqueue(loadAndSaveSingleEvent(dsc));
+                }
+            }
+            yield return wrap.Await(this);
         }
     }
     public IEnumerator HardcodedSimulate()
@@ -1696,6 +1888,7 @@ csvdata = webRequest.downloadHandler.text;
         Debug.LogFormat("Simulateling: {0}",simCnt);
         UpdateLoading();
         int ccnt = 0;
+        crWrapper wrap = new crWrapper(2);
         foreach (HardcodedEventData dat in HardcodedEvents.instance.events)
         {
             if (dat.millipedeFile != null || dat.meshFile != null)
@@ -1710,6 +1903,7 @@ csvdata = webRequest.downloadHandler.text;
                 loaderData.task = "Simulating";
                 UpdateLoading();
                 evId evid = new evId(dat.runId,dat.evId);
+
                 SavedEventData sd = null;// savedIndex[evid];
                 eventDesc dsc = null;
                 if(!savedIndex.TryGetValue(evid,out sd))
@@ -1729,12 +1923,11 @@ csvdata = webRequest.downloadHandler.text;
                     dsc = sd.description;
                   //  dsc.track = null;
                 }
-              
-                yield return StartCoroutine(simulateSingleEvent(dsc));
-                Debug.LogFormat("Simulated: {0} {1}", dat.runId,dat.evId);
+                wrap.Enqueue(simulateSingleEvent(dsc));
+              //  Debug.LogFormat("Simulated: {0} {1}", dat.runId,dat.evId);
                 loaderData.counter = simCnt;
-                loaderData.primaryCount = ccnt;
-                loaderData.secondaryCount = ccnt;
+              //  loaderData.primaryCount = ccnt;
+               // loaderData.secondaryCount = ccnt;
                 loaderData.curStatus = "Hardcoded events";
                 loaderData.task = "Simulating";  
                 UpdateLoading();
@@ -1742,89 +1935,100 @@ csvdata = webRequest.downloadHandler.text;
 
         }
 
+        yield return wrap.Await(this) ;
+        
+
     }
     public IEnumerator OptimisticUpdate()
     {
-        loaderData.counter = settings.eventData.Count>0? settings.eventData.Count :1;
-        loaderData.primaryCount = 0;
-        loaderData.secondaryCount = 0;
-        loaderData.curStatus = "Optimistic Update";
-        loaderData.task = "Update event count";
-        UpdateLoading();
-
-        int oldCount = settings.eventData.Count;
-        gotEventNumber = false;
-        yield return StartCoroutine(GetEventNumber());
-        if (!gotEventNumber)
+        using (ReentranceGuard r = new ReentranceGuard("update"))
         {
-            loaderData.curStatus = "Optimistic Update failed";
-            yield break;
-        }
-        Debug.LogFormat("Have loaded events: {0}",nevents);
-        int oldEventNum = settings.eventData.Count;
-        if (nevents == settings.eventData.Count)
-        {
-            Debug.Log(string.Format("No new events detected, {0} currently", nevents));
-            loaderData.primaryCount = settings.eventData.Count;
-            loaderData.secondaryCount = settings.eventData.Count;
-            UpdateLoading();
-            yield break;
-        }
-        if (nevents < oldEventNum)
-        {
-            Debug.Log(string.Format("Events are shrinking?, {0} currently, {1} before", nevents, oldEventNum));
-            loaderData.counter = 0;
-            loaderData.primaryCount =0;
+            if(!r)
+            {
+                yield return StartCoroutine(AwaitUnlock("update"));
+                yield break;
+            }
+            loaderData.counter = settings.eventData.Count > 0 ? settings.eventData.Count : 1;
+            loaderData.primaryCount = 0;
             loaderData.secondaryCount = 0;
+            loaderData.curStatus = "Optimistic Update";
+            loaderData.task = "Update event count";
             UpdateLoading();
-            yield break;
-        }
-        Int64 delta = nevents - oldEventNum;
-        loaderData.counter = (int)delta;
-        loaderData.primaryCount = 0;
-        loaderData.secondaryCount = 0;
-        loaderData.curStatus = "Optimistic Update";
-        loaderData.task = "Get latest events";
-        UpdateLoading();
-        gotLastEvents = false;
-        yield return StartCoroutine(GetLastEvents(delta));
-        if (!gotLastEvents)
-        {
-            loaderData.task = "Failed getting events";
+
+            int oldCount = settings.eventData.Count;
+            gotEventNumber = false;
+            yield return StartCoroutine(GetEventNumber());
+            if (!gotEventNumber)
+            {
+                loaderData.curStatus = "Optimistic Update failed";
+                yield break;
+            }
+            Debug.LogFormat("Have loaded events: {0}", nevents);
+            int oldEventNum = settings.eventData.Count;
+            if (nevents == settings.eventData.Count)
+            {
+                Debug.Log(string.Format("No new events detected, {0} currently", nevents));
+                loaderData.primaryCount = settings.eventData.Count;
+                loaderData.secondaryCount = settings.eventData.Count;
+                UpdateLoading();
+                yield break;
+            }
+            if (nevents < oldEventNum)
+            {
+                Debug.Log(string.Format("Events are shrinking?, {0} currently, {1} before", nevents, oldEventNum));
+                loaderData.counter = 0;
+                loaderData.primaryCount = 0;
+                loaderData.secondaryCount = 0;
+                UpdateLoading();
+                yield break;
+            }
+            Int64 delta = nevents - oldEventNum;
+            loaderData.counter = (int)delta;
+            loaderData.primaryCount = 0;
+            loaderData.secondaryCount = 0;
+            loaderData.curStatus = "Optimistic Update";
+            loaderData.task = "Get latest events";
             UpdateLoading();
-            yield break;
-        }
-        if (lastEventList.Count == 0)
-        {
-            loaderData.task = "No latest events";
+            gotLastEvents = false;
+            yield return StartCoroutine(GetLastEvents(delta));
+            if (!gotLastEvents)
+            {
+                loaderData.task = "Failed getting events";
+                UpdateLoading();
+                yield break;
+            }
+            if (lastEventList.Count == 0)
+            {
+                loaderData.task = "No latest events";
+                UpdateLoading();
+                yield break;
+            }
+            Debug.LogFormat("Have loaded last events: {0} of {1}", lastEventList.Count, delta);
+            if (lastEventList.Count != delta)
+            {
+                Debug.Log(string.Format("Got wrong number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
+                loaderData.counter = (int)lastEventList.Count;
+            }
+            loaderData.curStatus = "Loading events";
+            loaderData.task = "Get data";
             UpdateLoading();
-            yield break;
-        }
-        Debug.LogFormat("Have loaded last events: {0} of {1}", lastEventList.Count,delta);
-        if (lastEventList.Count != delta)
-        {
-            Debug.Log(string.Format("Got wrong number of events? Ah well. {0} expected, {1} got", delta, lastEventList.Count));
-            loaderData.counter = (int)lastEventList.Count;
-        }
-        loaderData.curStatus = "Loading events";
-        loaderData.task = "Get data";
-        UpdateLoading();
-        foreach (eventDesc dsc in lastEventList)
-        {
-            yield return StartCoroutine(loadAndSaveSingleEvent(dsc));
-            loaderData.primaryCount +=1;
+            crWrapper wrap = new crWrapper(5);
+            foreach (eventDesc dsc in lastEventList)
+            {
+                wrap.Enqueue(loadAndSaveSingleEvent(dsc));
+               // _unlock(new evId(dsc.run, dsc.evn)); //just in case
+            }
+            yield return wrap.Await(this);
+            loaderData.primaryCount = loaderData.counter;
+            loaderData.secondaryCount = loaderData.counter;
             UpdateLoading();
-            _unlock(new evId(dsc.run,dsc.evn)); //just in case
+            lastEventList.Clear();
+            saveSettings();
+            if (oldCount != settings.eventData.Count)
+                Utilz.UpdateEventList();
+            Debug.Log(string.Format("Done updating, cur events {0}", settings.eventData.Count));
+            StartCoroutine(updateComments());
         }
-        loaderData.primaryCount = loaderData.counter;
-        loaderData.secondaryCount = loaderData.counter;
-        UpdateLoading();
-        lastEventList.Clear();
-        saveSettings();
-        if (oldCount != settings.eventData.Count)
-            Utilz.UpdateEventList();
-        Debug.Log(string.Format("Done updating, cur events {0}", settings.eventData.Count));
-        StartCoroutine(updateComments());
     }
     bool gotLastBefore = false;
     IEnumerator GetLastEventsBefore(Int64 delta, Int64 runId, Int64 evd)
@@ -2100,9 +2304,10 @@ csvdata = webRequest.downloadHandler.text;
         StartCoroutine(loadNotifiedEvents());
         // Run update on hardcoded events
         yield return StartCoroutine(HardcodedUpdate());
-        yield return StartCoroutine(HardcodedSimulate());
+ 
         //5. Run network update for eventnum we don't seem to have. Save up to set number of files from new ones.
         yield return StartCoroutine(OptimisticUpdate());
+        yield return StartCoroutine(HardcodedSimulate());
         pruneFiles();
         cache.Prune();
         //6. Run a full network update (with paging) as coroutine to fill up gaps if any
@@ -2230,8 +2435,15 @@ csvdata = webRequest.downloadHandler.text;
     }
     public IEnumerator runFullUpdate()
     {
-        gotLastEvents = false;
-        int oldCount = settings.eventData.Count;
+        using (ReentranceGuard r = new ReentranceGuard("update"))
+        {
+            if (!r)
+            {
+                yield return StartCoroutine(AwaitUnlock("update"));
+                yield break;
+            }
+            gotLastEvents = false;
+            int oldCount = settings.eventData.Count;
 
             loaderData.counter = 1;
             loaderData.primaryCount = 0;
@@ -2239,93 +2451,94 @@ csvdata = webRequest.downloadHandler.text;
             loaderData.curStatus = "Full update";
             loaderData.task = "Enumerate API";
             UpdateLoading();
-        
-        yield return StartCoroutine(GetLastEvents(1));
-        if (gotLastEvents && lastEventList.Count >= 1)
-        {
-            Debug.Log("running full update");
-            long page = 10;
-            HashSet<evId> updCheck = new HashSet<evId>();
-            bool left = true;
-            loaderData.counter = lastEventList.Count;
-            loaderData.primaryCount = 0;
-            loaderData.secondaryCount = 0;
-            loaderData.curStatus = "Full update";
-            loaderData.task = "Enumerate API";
-            UpdateLoading();
-            while (left)
+
+            yield return StartCoroutine(GetLastEvents(1));
+            if (gotLastEvents && lastEventList.Count >= 1)
             {
-                left = false;
-                if (lastEventList.Count == 0) break;
-                lastEventList.Sort((x, y) => { return x.Compare(y); });
-                bool upd = false;
-                loaderData.task = "Process event page";
-                foreach (eventDesc ev in lastEventList)
+                Debug.Log("running full update");
+                long page = 10;
+                HashSet<evId> updCheck = new HashSet<evId>();
+                bool left = true;
+                loaderData.counter = lastEventList.Count;
+                loaderData.primaryCount = 0;
+                loaderData.secondaryCount = 0;
+                loaderData.curStatus = "Full update";
+                loaderData.task = "Enumerate API";
+                UpdateLoading();
+                while (left)
                 {
-                  //  Debug.Log(ev.track);
-                    evId eid = new evId(ev.run, ev.evn);
-                    if (!updCheck.Contains(eid))
+                    left = false;
+                    if (lastEventList.Count == 0) break;
+                    lastEventList.Sort((x, y) => { return x.Compare(y); });
+                    bool upd = false;
+                    loaderData.task = "Process event page";
+                    foreach (eventDesc ev in lastEventList)
                     {
-                        updCheck.Add(eid);
-                        left = true;
-                    }
-                    if(!savedIndex.ContainsKey(eid))
-                    {
-                        SavedEventData dat = new SavedEventData();
-                        dat.csvHash = null;
-                        dat.csvName = null;
-                        dat.description = ev;
-                        dat.integrationSteps = 2;
-                        dat.status = "Not loaded";
-                        dat.hashname = null;
-                        settings.eventData.Add(dat);
-                        savedIndex[eid] = dat;
-                        upd = true;
-                    }
-                    else
-                    {
-                        if( (ev.humName!=null&&savedIndex[eid].description.humName==null) )
+                        //  Debug.Log(ev.track);
+                        evId eid = new evId(ev.run, ev.evn);
+                        if (!updCheck.Contains(eid))
                         {
-                            savedIndex[eid].description.humName = ev.humName;
+                            updCheck.Add(eid);
+                            left = true;
+                        }
+                        if (!savedIndex.ContainsKey(eid))
+                        {
+                            SavedEventData dat = new SavedEventData();
+                            dat.csvHash = null;
+                            dat.csvName = null;
+                            dat.description = ev;
+                            dat.integrationSteps = 2;
+                            dat.status = "Not loaded";
+                            dat.hashname = null;
+                            settings.eventData.Add(dat);
+                            savedIndex[eid] = dat;
                             upd = true;
                         }
-                        if(!ev.Equals(savedIndex[eid].description))
+                        else
                         {
-                          //  Debug.LogFormat("Track: {0}", ev.track);
-                            savedIndex[eid].description = ev;
-                            upd = true;
+                            if ((ev.humName != null && savedIndex[eid].description.humName == null))
+                            {
+                                savedIndex[eid].description.humName = ev.humName;
+                                upd = true;
+                            }
+                            if (!ev.Equals(savedIndex[eid].description))
+                            {
+                                //  Debug.LogFormat("Track: {0}", ev.track);
+                                savedIndex[eid].description = ev;
+                                upd = true;
+                            }
                         }
+                        loaderData.primaryCount += 1;
+                        UpdateLoading();
                     }
-                    loaderData.primaryCount += 1;
+                    if (upd)
+                    {
+                        settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
+                        saveSettings();
+                    }
+                    eventDesc curLastEv = lastEventList[0];
+                    loaderData.task = "Read event page";
+                    loaderData.primaryCount = 0;
+                    loaderData.secondaryCount = 0;
+                    loaderData.counter = 1;
                     UpdateLoading();
+                    yield return StartCoroutine(GetLastEventsBefore(page, curLastEv.run, curLastEv.evn));
+                    Debug.LogFormat("Got last before {0} {1}", gotLastBefore, lastEventList.Count);
+                    if (!gotLastBefore) left = false;
                 }
-                if(upd)
-                {
-                    settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
-                    saveSettings();
-                }
-                eventDesc curLastEv = lastEventList[0];
-                loaderData.task = "Read event page";
+                loaderData.task = "Prune files";
                 loaderData.primaryCount = 0;
                 loaderData.secondaryCount = 0;
                 loaderData.counter = 1;
                 UpdateLoading();
-                yield return StartCoroutine(GetLastEventsBefore(page, curLastEv.run, curLastEv.evn));
-                Debug.LogFormat("Got last before {0} {1}",gotLastBefore,lastEventList.Count);
-                if (!gotLastBefore) left = false;
+                pruneFiles();
+                settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
+                saveSettings();
             }
-            loaderData.task = "Prune files";
-            loaderData.primaryCount = 0;
-            loaderData.secondaryCount = 0;
-            loaderData.counter = 1;
-            UpdateLoading();
-            pruneFiles();
-            settings.eventData.Sort((x, y) => { return x.description.Compare(y.description); });
-            saveSettings();
+            if (oldCount != settings.eventData.Count)
+                Utilz.UpdateEventList();
+            StartCoroutine(updateComments());
         }
-        if (oldCount != settings.eventData.Count)
-            Utilz.UpdateEventList();
-        StartCoroutine(updateComments());
     }
     public trackData forcedTracks(evId id)
     {
@@ -2338,81 +2551,7 @@ csvdata = webRequest.downloadHandler.text;
             return dat.tracks[0];
         }
                 return null;
-       // trackData frc=null;
-      /*if(id.Key== 133119&&id.Value== 22683750)
-        {
-            frc = new trackData();
-            frc.azi_rad = 1.5359396402731433f;
-            frc.dec_rad = 0.21948083061719348f;
-            frc.mjd = 58757.8397936808;
-            frc.ra_rad = 5.486531456790467;
-            frc.rec_t0 = 10991.37383428116f;
-            frc.rec_x = -308.8849482380408f;
-            frc.rec_y = -318.0330558043538f;
-            frc.rec_z = 8.055729493786885f;
-            frc.zen_rad = 1.7916152089981798f;
-           
-        }*/
-
-        /*if (id.Key == 132910 && id.Value == 57145925)
-        {
-            frc = new trackData();
-            frc.azi_rad = 2.160849318134296f;
-            frc.dec_rad = 0.18339852545918298f;
-            frc.mjd = 58694.86853369251;
-            frc.ra_rad = 3.958934679276621;
-            frc.rec_t0 = 17437.752211638854f;
-            frc.rec_x = -175.9504622785223f;
-            frc.rec_y = -76.50362830103359f;
-            frc.rec_z = -502.3460613431437f;
-            frc.zen_rad = 1.752881090566949f;
-           
-        }*/
-       /* if (id.Key == 124861 && id.Value == 32863663)
-        {
-            frc = new trackData();
-            frc.azi_rad = 5.463772410377908f;
-            frc.dec_rad = 0.1948552930855824f;
-            frc.mjd = 56819.204436954555;
-            frc.ra_rad = 1.9165467795802764;
-            frc.rec_t0 = 10737.919145535296f;
-            frc.rec_x = -135.578239824026f;
-            frc.rec_y = -274.6983698626916f;
-            frc.rec_z = -157.7610224514117f;
-            frc.zen_rad = 1.7652231018807554f;
-         }*/
-/*
-        if (id.Key == 130033 && id.Value == 50579430)
-        {
-            frc = new trackData();
-            frc.azi_rad = 5.7245209670173285f;
-            frc.dec_rad = 0.09872252891807387f;
-            frc.mjd = 58018.87118560489;
-            frc.ra_rad = 1.3492368854225945;
-            frc.rec_t0 = 10783.657746106113f;
-            frc.rec_x = -70.62527207138828f;
-            frc.rec_y = -316.0976376920778f;
-            frc.rec_z = -247.34569170289114f;
-            frc.zen_rad = 1.6699855005454454f;
-        }
-        if (id.Key == 132974 && id.Value == 67924813)
-        {
-            frc = new trackData();
-            frc.azi_rad = 3.0076936547194935f;
-            frc.dec_rad = 0.016708671281222044f;
-            frc.mjd = 58714.73222496411;
-            frc.ra_rad = 2.597168760800879;
-            frc.rec_t0 = 10983.295625075258f;
-            frc.rec_x = -83.05759677740252f;
-            frc.rec_y = 93.70207677231019f;
-            frc.rec_z = -46.6655356299309f;
-            frc.zen_rad = 1.585833004839499f;
-           // 132974,,,67924813,,,,,,
-        }
-        */
-
-
-            return null;
+  
     }
     void assignExpected()
     {

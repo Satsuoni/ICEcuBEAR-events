@@ -7,6 +7,8 @@ using System.Text;
 using UnityEngine;
 using SharpCompress.Compressors.Deflate;
 using SimpleJSON;
+using System.Security.Cryptography;
+
 public class Meshobject
 {
     public Vector3[] verts;
@@ -185,7 +187,7 @@ public class ScatterPhoton
         prevTime = timeOffset;
         position = position + direction * distance;
         timeOffset += dur;
-        if (TrailmeshMaker.rndgen.NextDouble()<=decayprob)
+        if (RandomGen3.NextDouble()<=decayprob)
         {
             decayed = true;
             return;
@@ -335,6 +337,7 @@ public class CascadeData
     public List<ScatterPhoton> Emit(float duration)
     {
         List<ScatterPhoton> ret = new List<ScatterPhoton>();
+       // Debug.LogFormat("Emitting energy {0}",energy);
         for (int i= 0; i < energy;i++)
         {
             Vector3 emitPos = location + radius * TrailmeshMaker.onUnitSphere();
@@ -343,23 +346,23 @@ public class CascadeData
             {
                 perp = new Vector3(0, directionPreference.z, -directionPreference.y);
             }
-            Quaternion rt = Quaternion.AngleAxis((float)TrailmeshMaker.rndgen.NextDouble() * 360, directionPreference);
+            Quaternion rt = Quaternion.AngleAxis((float)RandomGen3.NextDouble() * 360, directionPreference);
             perp = (rt * perp).normalized;
-            float angl = Mathf.PI * (1 - directionBias)* (float)TrailmeshMaker.rndgen.NextDouble();
+            float angl = Mathf.PI * (1 - directionBias)* (float)RandomGen3.NextDouble();
             Vector3 dir = (directionPreference * Mathf.Cos(angl) + perp * Mathf.Sin(angl)).normalized;
             ScatterPhoton pht = new ScatterPhoton();
            // Debug.LogFormat("Derection:{0} {1}", dir, angl);
             pht.direction = dir;
             pht.position = emitPos;
-            pht.timeOffset = timeOffset+duration* (float)TrailmeshMaker.rndgen.NextDouble();
+            pht.timeOffset = timeOffset+duration* (float)RandomGen3.NextDouble();
             ret.Add(pht);
         }
+        Debug.LogFormat("Emitted energy {0}", energy);
         return ret;
     }
 }
 public class MuonTrack
 {
-    System.Random rndgen = new System.Random();
     public float duration;
     public float speed;
     public Vector3 initialPos;
@@ -370,7 +373,7 @@ public class MuonTrack
     public static float cos41 = Mathf.Cos(41.0f * Mathf.PI / 180.0f);
     ScatterPhoton EmitCherenkovPhoton(Vector3 pos,float timeOffset)
     {
-        float shift = (float)rndgen.NextDouble();
+        float shift = (float)RandomGen3.NextDouble();
         Vector3 perp = new Vector3(-direction.y, direction.x, 0);
         if (Mathf.Abs(direction.z)>0.9)
         {
@@ -403,6 +406,8 @@ public class MuonTrack
         List<Vector2> uvs = new List<Vector2>();
         //List<Color> clrs = new List<Color>();
         List<int> indc = new List<int>();
+       // Debug.LogFormat("Photons started: {0}",photons.Count);
+        int cntph = 0;
         foreach(ScatterPhoton ph in photons)
         {
             int cnt = 0;
@@ -428,6 +433,11 @@ public class MuonTrack
                 ph.Propagate(IcecubeDust.AbsorbtionLength(ph.position,ph.direction), IcecubeDust.ScatterLength(ph.position));
                 cnt += 1;
             }
+            cntph++;
+            if(cntph%100==0)
+            {
+               // Debug.LogFormat("Photons now: {0}", cntph);
+            }
             if(verts.Count > 65530)
             {
                 Meshobject newM = new Meshobject(verts.ToArray(),uvs.ToArray(),indc.ToArray());
@@ -443,6 +453,7 @@ public class MuonTrack
             Meshobject newM = new Meshobject(verts.ToArray(), uvs.ToArray(), indc.ToArray());
             ret.meshes.Add(newM);
         }
+        //Debug.Log("Returning from sim");
         return ret;
     }
     virtual public MultimeshObject Simulate()
@@ -450,9 +461,10 @@ public class MuonTrack
         int emittedPhotons = Mathf.RoundToInt(emissionRate * duration);
         MultimeshObject  ret = new MultimeshObject();
         List<ScatterPhoton> emitted = new List<ScatterPhoton>();
-        for(int i=0;i<emittedPhotons;i++)
+        Debug.LogFormat("Emitted track photons: {0} ", emittedPhotons);
+        for (int i=0;i<emittedPhotons;i++)
         {
-            float emitTime = (float)rndgen.NextDouble() * duration;
+            float emitTime = (float)RandomGen3.NextDouble() * duration;
             Vector3 ppos = emitTime * speed * direction + initialPos;
             emitted.Add(EmitCherenkovPhoton(ppos,emitTime));
             if (emitted.Count>= 16384)
@@ -470,17 +482,52 @@ public class MuonTrack
                 ret.meshes.AddRange(PhotonsToMesh(emitted).meshes);
             }
          }
+        Debug.LogFormat("Total meshes: {0} ",ret.meshes.Count);
         return ret;
     }
 }
+public static class RandomGen3
+{
+    private static RNGCryptoServiceProvider _global =
+        new RNGCryptoServiceProvider();
+    [ThreadStatic]
+    private static System.Random _local;
+
+    public static int Next()
+    {
+        System.Random inst = _local;
+        if (inst == null)
+        {
+            byte[] buffer = new byte[4];
+            _global.GetBytes(buffer);
+            _local = inst = new System.Random(
+                BitConverter.ToInt32(buffer, 0));
+        }
+        return inst.Next();
+    }
+    public static double NextDouble()
+    {
+        System.Random inst = _local;
+        if (inst == null)
+        {
+            byte[] buffer = new byte[4];
+            _global.GetBytes(buffer);
+            _local = inst = new System.Random(
+                BitConverter.ToInt32(buffer, 0));
+        }
+        return inst.NextDouble();
+    }
+}
+
 public class TrailmeshMaker : MonoBehaviour
 {
+
     // Start is called before the first frame update
     static Quaternion rot = Quaternion.Euler(new Vector3(0,0,125));
     static float al = Mathf.Exp(-0.082f);
     static float bet = Mathf.Exp(0.040f);
     static float gm = Mathf.Exp(0.042f);
-    static public  System.Random rndgen = new System.Random();
+
     void Start()
     {
         /*trackData frc = new trackData();
@@ -505,7 +552,7 @@ public class TrailmeshMaker : MonoBehaviour
     public static float DrawExp(float ilam)
     {
         if (ilam <= 0) ilam = 0.01f;
-        float ran = (float)rndgen.NextDouble() ;
+        float ran = (float)RandomGen3.NextDouble() ;
        
         float ret = -Mathf.Log(1.0f - ran) *ilam ;
         if (ret > ilam * 10000) return ilam * 10000;
@@ -531,13 +578,19 @@ public class TrailmeshMaker : MonoBehaviour
     {
         while (true)
         {
-            Vector3 vct = new Vector3((float)(rndgen.NextDouble() * 2 - 1), (float)(rndgen.NextDouble() * 2 - 1), (float)(rndgen.NextDouble() * 2 - 1));
+            double theta = 2 * Math.PI * RandomGen3.NextDouble();
+            double phi = Math.Acos(1 - 2 * RandomGen3.NextDouble());
+            double x = Math.Sin(phi) * Math.Cos(theta);
+            double y = Math.Sin(phi) * Math.Sin(theta);
+            double z = Math.Cos(phi);
+            Vector3 vct = new Vector3((float)x, (float)y, (float)z);// (float)(rndgen.NextDouble() * 2 - 1), (float)(rndgen.NextDouble() * 2 - 1), (float)(rndgen.NextDouble() * 2 - 1));
             var mag = vct.magnitude;
-            if (mag <= 1 && mag > 0.0001f)
+            if (mag <= 1.000001 && mag > 0.0001f)
             {
             
                 return vct / mag;
             }
+           // Debug.LogFormat("Rejected {0}", vct);
         }
     }
     // Start is called before the first frame update
@@ -550,7 +603,7 @@ public class TrailmeshMaker : MonoBehaviour
             Vector3 rd = onUnitSphere();
             float prob = scatterdirprob(inc, rd);
            
-            if (prob>= rndgen.NextDouble()*40)
+            if (prob>= RandomGen3.NextDouble()*40)
             {
                 //Debug.LogFormat("Prob: {0}",prob);
                 return rd;
