@@ -105,6 +105,22 @@ public class TrackMeshMaker : MonoBehaviour
         }
         data = null;
     }
+    public void Inactivate()
+    {
+        foreach (Transform tr in gameObject.transform)
+        {
+            tr.gameObject.SetActive(false);
+        }
+        
+    }
+    public void Activate()
+    {
+        foreach (Transform tr in gameObject.transform)
+        {
+            tr.gameObject.SetActive(true);
+        }
+
+    }
     public bool HasMesh()
     {
         return data != null;
@@ -138,6 +154,7 @@ public class TrackMeshMaker : MonoBehaviour
     }
     public void UseMesh(int run, int ev, MultimeshObject mmesh)
     {
+        Activate();
         if (run == runId && ev == evId)
         {
             //same event..
