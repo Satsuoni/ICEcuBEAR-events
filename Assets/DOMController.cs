@@ -860,7 +860,11 @@ curEvent = new List<eventData>();
             }
            // Debug.Log(atime);
             Debug.LogFormat("Trackt0 {0} atime: {1}",track.rec_t0,atime);
-            if (track.rec_t0 > atime) return;
+            if (track.rec_t0 > atime)
+            {
+                trackmesh?.Inactivate();
+                return;
+            }
             Vector3 tdir = new Vector3(Mathf.Sin(track.zen_rad)*Mathf.Cos(track.azi_rad), Mathf.Sin(track.zen_rad) * Mathf.Sin(track.azi_rad), Mathf.Cos(track.zen_rad));
             float vel = 0.299792458f;/// ni;
             float dt = atime - track.rec_t0;
