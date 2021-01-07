@@ -357,7 +357,7 @@ public class CascadeData
             pht.timeOffset = timeOffset+duration* (float)RandomGen3.NextDouble();
             ret.Add(pht);
         }
-        Debug.LogFormat("Emitted energy {0}", energy);
+      //  Debug.LogFormat("Emitted energy {0}", energy);
         return ret;
     }
 }

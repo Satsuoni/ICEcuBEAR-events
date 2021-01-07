@@ -275,6 +275,7 @@ public class DOMController : MonoBehaviour
     Slider hairControl;
     GameObject hairCover=null;
     Toggle towerControl;
+    Toggle czillaControl;
     const int timeSpans = 2500;
     public Transform footPoint;
     public Transform footAlign;
@@ -300,6 +301,7 @@ public class DOMController : MonoBehaviour
     public GameObject indicator;
     public GameObject fluxball;
     public GameObject tower;
+    public GameObject czilla;
     public TrackMeshMaker trackmesh;
    
     void Start()
@@ -380,6 +382,15 @@ curEvent = new List<eventData>();
             if (towerControl != null)
             {
                 towerControl.onValueChanged.AddListener(delegate { towerChange(); });
+            }
+        }
+        GameObject czCon = GameObject.Find("zillaToggle");
+        if (czCon != null)
+        {
+            czillaControl = czCon.GetComponent<Toggle>();
+            if (czillaControl != null)
+            {
+                czillaControl.onValueChanged.AddListener(delegate { czillaChange(); });
             }
         }
         foreach (singleBallList lst in ballArray)
@@ -962,6 +973,13 @@ curEvent = new List<eventData>();
         if (towerControl!=null&&tower!=null)
         {
             tower.SetActive(towerControl.isOn);
+        }
+    }
+    public void czillaChange()
+    {
+        if (czillaControl != null && czilla != null)
+        {
+            czilla.SetActive(czillaControl.isOn);
         }
     }
     public void hairChange()
