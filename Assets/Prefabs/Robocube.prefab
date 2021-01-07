@@ -11548,6 +11548,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: Czilla_Mesh
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: d6b7bcc25f2aedd45aba29ddaf471013,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d6b7bcc25f2aedd45aba29ddaf471013, type: 3}
 --- !u!1 &548464203321870194 stripped
@@ -11641,7 +11646,7 @@ PrefabInstance:
     - target: {fileID: -927199367670048503, guid: 4245fce04d7a2cd43bbb0c65dbca50cf,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4245fce04d7a2cd43bbb0c65dbca50cf, type: 3}

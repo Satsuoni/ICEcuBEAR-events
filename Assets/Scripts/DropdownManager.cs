@@ -87,7 +87,9 @@ public class DropdownManager : MonoBehaviour
         if (lst.Count>0)
         {
             managed.interactable = true;
+            DropdownValueChanged(managed);
         }
+       
         //managed.ClearOptions();
         //managed.AddOptions(lst);
     }
