@@ -104,6 +104,8 @@ public class TrackMeshMaker : MonoBehaviour
             Destroy(tr.gameObject);
         }
         data = null;
+        runId = -1;
+        evId = -1;
     }
     public void Inactivate()
     {

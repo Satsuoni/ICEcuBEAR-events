@@ -767,7 +767,7 @@ curEvent = new List<eventData>();
                         //   inst.PlayNote(ballArray[ball.stId].balls[ball.domId].transform.localPosition,(float) sig, 0.12f);
                         // }
                         int str = (int)(sig * 40);
-                        if (str < 10) str = 10;
+                        if (str < 20) str = 20;
                         if (str > 70) str = 70;
 
                         stringArray[ball.stId-1].HitBall(ball.domId, str);
@@ -893,7 +893,7 @@ curEvent = new List<eventData>();
                 }
                 else
                 {
-                    trackmesh.Clear();
+                    trackmesh.Inactivate();
                     
                 }
                //trackmesh.MaybeRecreateMesh((int)desc.run, (int)desc.evn, new Vector3(track.rec_x, track.rec_y, track.rec_z), -tdir/tdir.magnitude, 5000, 10);
@@ -960,7 +960,7 @@ curEvent = new List<eventData>();
             }
             if (trackmesh != null)
             {
-                trackmesh.Clear();
+                trackmesh.Inactivate();
             }
         }
     }
