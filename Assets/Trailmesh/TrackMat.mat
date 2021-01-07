@@ -76,8 +76,8 @@ Material:
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1
-    - mytime: 2327.1553
-    - timeScale: 5280.0977
+    - mytime: 731.49414
+    - timeScale: 6731.493
     - timeWidth: 0.02
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}

@@ -761,7 +761,7 @@ public class SimplexCalc : MonoBehaviour
             }
             
             updateScreenConstraints();
-            IUIConstraint[] cons = canvas.gameObject.GetComponentsInChildren<IUIConstraint>();
+            IUIConstraint[] cons = canvas.gameObject.GetComponentsInChildren<IUIConstraint>(true);
             foreach (IUIConstraint con in cons)
             {
                 cassowary.Constraint st = con.getConstraint(vars);
