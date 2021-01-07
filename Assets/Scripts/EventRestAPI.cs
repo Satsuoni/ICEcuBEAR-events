@@ -829,7 +829,7 @@ public class SavedEventsSettings
         {
             eventData.Remove(dat);
         }
-        if (animationSpeed < 0.1f) animationSpeed = 0.2f;
+        if (animationSpeed < 0.01f) animationSpeed = 0.01f;
         if (animationSpeed > 1f) animationSpeed = 0.2f;
         if (scalePower < 0.04f) scalePower = 0.15f;
         if (scalePower > 0.3f) scalePower = 0.15f;
