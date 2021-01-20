@@ -1323,6 +1323,12 @@ public class EventRestAPI : MonoBehaviour
         if (dat.meshFile == null && dat.millipedeFile == null) return false;
         return true;
     }
+    public bool eventTrackIsSuppressed(evId ev)
+    {
+        HardcodedEventData dat = HardcodedEvents.instance.GetHardcoded(ev);
+        if (dat == null) return false;
+        return dat.isTrackSuppressed;
+    }
     IEnumerator simulateSingleEvent(eventDesc ev, bool saveMeshfile = true)
     {
         if (ev == null) yield break;
