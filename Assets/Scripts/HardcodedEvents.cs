@@ -21,6 +21,7 @@ public class HardcodedEventData
     public TextAsset millipedeFile;
     public TextAsset meshFile;
     public trackData[] tracks; //only 1 allowed really... 
+    public bool isTrackSuppressed = false;
 }
 
 public class HardcodedEvents : MonoBehaviour

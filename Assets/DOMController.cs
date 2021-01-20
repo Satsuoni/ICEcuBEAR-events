@@ -823,7 +823,9 @@ curEvent = new List<eventData>();
             t0 = t1; t1 = tt;
         }
         float atime = nsld * (t1 - t0) + t0;
-        if(track==null||track.rec_t0>atime+0.001f)
+        var cdesc = EventRestAPI.Instance.currentEvent.description;
+        var ceid = new KeyValuePair<long, long>(cdesc.run, cdesc.evn);
+        if (track==null||track.rec_t0>atime+0.001f || EventRestAPI.Instance.eventTrackIsSuppressed(ceid))
         {
             pole.SetActive(false);
             cone.SetActive(false);
@@ -956,6 +958,7 @@ curEvent = new List<eventData>();
         {
             if (hairControl != null)
             {
+                hairCover?.SetActive(false);
                 hairCover?.SetActive(false);
             }
             if (trackmesh != null)
