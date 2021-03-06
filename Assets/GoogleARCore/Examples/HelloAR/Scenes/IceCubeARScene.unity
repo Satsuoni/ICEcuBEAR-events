@@ -8348,7 +8348,7 @@ RectTransform:
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.00000006928402, y: 0.7499998}
-  m_AnchorMax: {x: 1, y: 1}
+  m_AnchorMax: {x: 0.9999998, y: 1.0000006}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -13486,7 +13486,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPortrait: 1
-  landscapeAnchor: {x: 0.397541, y: 0.63503647, z: 0.602459, w: 1}
+  landscapeAnchor: {x: 0.33426273, y: 0.6666666, z: 0.6657373, w: 1}
   portraitAnchor: {x: 0.3333333, y: 0.8459716, z: 0.6666667, w: 1}
   landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
   portraitOffset: {x: 0, y: 0, z: 0, w: 0}
@@ -18554,7 +18554,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isPortrait: 1
-  landscapeAnchor: {x: 8.781022e-10, y: 0.61904764, z: 1, w: 0.7619049}
+  landscapeAnchor: {x: 0.0000000069957387, y: 0.6190476, z: 1, w: 0.7619049}
   portraitAnchor: {x: -0.0000000054211076, y: 0.61904764, z: 1, w: 0.7619049}
   landscapeOffset: {x: 0, y: 0, z: 0, w: 0}
   portraitOffset: {x: 0, y: 0, z: 0, w: 0}
