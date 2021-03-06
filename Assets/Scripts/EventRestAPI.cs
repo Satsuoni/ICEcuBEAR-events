@@ -2561,7 +2561,7 @@ public class EventRestAPI : MonoBehaviour
     }
     void assignExpected()
     {
-        Debug.Log("Assigning expected");
+        Debug.LogFormat("Assigning expected {0} {1}", expectedNextEvent.Key,expectedNextEvent.Value);
         if (expectedNextEvent.Key == -1) return;
         if (!cache.checkCache(expectedNextEvent)) return;
         fullEventData dat = cache.getItem(expectedNextEvent);
