@@ -9,7 +9,8 @@
     }
   ],
   "dependencies": {
-    "com.google.firebase.messaging": "6.16.0",
+    "com.google.firebase.app": "7.1.0",
+    "com.google.firebase.messaging": "7.1.0",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.2d.tilemap": "1.0.0",
     "com.unity.analytics": "3.3.5",
