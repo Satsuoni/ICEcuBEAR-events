@@ -4491,7 +4491,7 @@ MonoBehaviour:
     desc:
       baseDesc: Glashow resonance
       energy: 6300
-      eventDate: 16/12/06
+      eventDate: 16/12/08
       humName: Hydrangea
       comment: 
     csvFile: {fileID: 4900000, guid: cbdb6c0e14f0de1428ca2dce897845a1, type: 3}
