@@ -360,7 +360,7 @@ namespace UnityEngine.UI
 
             public string text { get { return m_Text; } set { m_Text = value; } }
             public Sprite image { get { return m_Image; } set { m_Image = value; } }
-
+            public string sortKey;
             public OptionData()
             {
             }

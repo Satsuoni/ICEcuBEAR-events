@@ -28,7 +28,7 @@ public class CommentFormatter : MonoBehaviour
         {
             if (dsc.humName != null)
             {
-                nameField.text = string.Format(" {0} ({1}/{2}): {3} ({4}), {5}TeV", dsc.humName,dsc.run,dsc.evn, dsc.baseDesc, dsc.eventDate, dsc.energy);
+                nameField.text = string.Format(" {0}: {3} ({4}), {5}TeV", dsc.humName,dsc.run,dsc.evn, dsc.baseDesc, dsc.eventDate, dsc.energy);
 
             }
             else
@@ -37,6 +37,7 @@ public class CommentFormatter : MonoBehaviour
             }
 
         }
+        //Debug.Log(comment);
       
         if(commentField!=null)
         {
