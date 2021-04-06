@@ -787,6 +787,16 @@ public class SavedEventData
     public int integrationSteps;
     public string status;// maybe enum is better but a hassle
     public string comment;
+    string sortLabel;
+    public string getSortLabel()
+    {
+        if(sortLabel==null)
+        {
+            if (description == null) return "0_0";
+            return string.Format("{0}_{1}",description.run,description.evn);
+        }
+        return sortLabel;
+    }
     public bool Corrupt()
     {
     
@@ -1021,6 +1031,7 @@ public class EventRestAPI : MonoBehaviour
     {
         settings.deleteCache();
         savedIndex.Clear();
+        cache.Clear();
         saveSettings();
         Utilz.UpdateEventList();
     }
@@ -1442,11 +1453,13 @@ public class EventRestAPI : MonoBehaviour
         evId evid = new evId(ev.run, ev.evn);
         using (ReActionGuard r = new ReActionGuard(evid, "loadAndSaveSingleEvent"))
         {
+          //  Debug.LogFormat("Load And Saving {0} {1}",evid.Key,evid.Value);
             if(!r)
             {
                 yield return StartCoroutine(AwaitUnlock(evid, "loadAndSaveSingleEvent"));
                 yield break;
             }
+          //  Debug.LogFormat("Still Load And Saving {0} {1}", evid.Key, evid.Value);
             if (!loaderData.mainLifecycle)
             {
                 loaderData.counter = 1;
@@ -1461,7 +1474,7 @@ public class EventRestAPI : MonoBehaviour
                 //already have it, break;
                 yield break;
             }
-           
+           // Debug.LogFormat("Cache Load And Saving {0} {1}", evid.Key, evid.Value);
             SavedEventData sdat = null;
             loaderData.task = "Get data";
             UpdateLoading();
@@ -1587,6 +1600,12 @@ public class EventRestAPI : MonoBehaviour
             if (hdat != null && hdat.csvFile != null)
             {
                 csvdata = hdat.csvFile.text;
+                if (!savedIndex.ContainsKey(evid))
+                {
+                    savedIndex[evid] = sdat;
+                    settings.eventData.Add(sdat);
+                    saveSettings();
+                }
             }
             else
             {
@@ -1871,6 +1890,7 @@ public class EventRestAPI : MonoBehaviour
                     dsc.humName = dat.desc.humName;
                     dsc.run = dat.runId;
                     wrap.Enqueue(loadAndSaveSingleEvent(dsc));
+                   // Debug.LogFormat("Running {0}", dsc.humName);
                 }
             }
             yield return wrap.Await(this);
@@ -2346,12 +2366,17 @@ public class EventRestAPI : MonoBehaviour
             }
         }
     }
-
+    public IEnumerator compositeUpdate()
+    {
+        yield return StartCoroutine(HardcodedUpdate());
+        yield return StartCoroutine(HardcodedSimulate());
+        yield return StartCoroutine(runFullUpdate());
+    }
     public void demandFullUpdate()
     {
         if(isDropdownReady)
         {
-            StartCoroutine(runFullUpdate());
+            StartCoroutine(compositeUpdate());
         }
     }
     string comment = null;

@@ -76,9 +76,11 @@ public class DropdownManager : MonoBehaviour
             {
                 dopt.text = string.Format("Ev. {0}/{1} : {2} ({3}), {4}TeV", edat.description.run, edat.description.evn, edat.description.baseDesc, edat.description.eventDate, edat.description.energy);
             }
+            dopt.sortKey = edat.getSortLabel();
             lst.Add(dopt);
             curOptions.Add(edat.description);
         }
+        lst.Sort((x, y) => -x.sortKey.CompareTo(y.sortKey));
         //Debug.Log("Nyanya options");
         //Debug.Log("DropboxUpdate");
         if(managed==null)
