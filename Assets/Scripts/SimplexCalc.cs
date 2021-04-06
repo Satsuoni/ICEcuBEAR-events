@@ -709,12 +709,12 @@ public class SimplexCalc : MonoBehaviour
             {
                 vars[safeArea] = new WrappedRect(safeArea);
             }
-            Rect rs = Screen.safeArea;
+            Rect rs =new Rect(Screen.safeArea.xMin, Screen.height-Screen.safeArea.yMax,Screen.safeArea.width, Screen.safeArea.height);
             Debug.LogFormat("Safe Area: {0}",rs);
-            solver.addConstraint(cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Top), rs.top));
-            solver.addConstraint(cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Left), rs.left));
-            cassowary.Constraint snewx = cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Right), rs.right);
-            cassowary.Constraint snewy = cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Bottom),rs.bottom);
+            solver.addConstraint(cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Top), rs.yMin));
+            solver.addConstraint(cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Left), rs.xMin));
+            cassowary.Constraint snewx = cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Right), rs.xMax);
+            cassowary.Constraint snewy = cassowary.Constraint.Eq(vars[safeArea].getTermFromSide(rectSide.Bottom),rs.yMax);
             try
             {
                 solver.addConstraint(snewx);
