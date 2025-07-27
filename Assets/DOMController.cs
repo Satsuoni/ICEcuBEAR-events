@@ -814,9 +814,11 @@ curEvent = new List<eventData>();
         if (force)
         {
             Debug.Log("Force updating");
+            Debug.Log(EventRestAPI.Instance.currentEvent.eventName);
         }
         float t1 = EventRestAPI.Instance.currentEvent.maxPureTime;
         float t0 = EventRestAPI.Instance.currentEvent.minPureTime;
+        
         if (t0 > t1)
         {
             float tt = t0;

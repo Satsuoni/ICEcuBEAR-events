@@ -194,6 +194,7 @@ public class UIManager : MonoBehaviour
              m_ShowingTapToPlace = true;
              m_ShowingMoveDevice = false;
          }*/
+        //Debug.LogFormat("Frame changed {0}",_state);
          if(_state==0&&PlanesFound())
            setState(1);
     }

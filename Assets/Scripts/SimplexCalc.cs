@@ -728,8 +728,8 @@ public class SimplexCalc : MonoBehaviour
 
         }
         prevScreen = new Vector2(Screen.width,Screen.height);
-        Debug.Log(prevScreen);
-        Debug.Log(Screen.width);
+        //Debug.Log(prevScreen);
+        //Debug.Log(Screen.width);
     }
     void Start()
     {
@@ -749,7 +749,7 @@ public class SimplexCalc : MonoBehaviour
     bool needs_reassign = false;
     void Rebuild()
     {
-        Debug.Log("Rebuilding");
+        //Debug.Log("Rebuilding");
         solver.reset();
        
         if (canvas != null)

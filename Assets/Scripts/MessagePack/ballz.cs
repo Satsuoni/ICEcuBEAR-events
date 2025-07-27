@@ -636,6 +636,7 @@ namespace MessagePack.Formatters
                 { "animationSpeed", 3},
                 { "scalePower", 4},
                 { "scaleMul", 5},
+                 { "settingsVersion", 6},
             };
 
             this.____stringByteKeys = new byte[][]
@@ -646,7 +647,7 @@ namespace MessagePack.Formatters
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("animationSpeed"),
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("scalePower"),
                 global::MessagePack.MessagePackBinary.GetEncodedStringBytes("scaleMul"),
-                
+                  global::MessagePack.MessagePackBinary.GetEncodedStringBytes("settingsVersion"),
             };
         }
 
@@ -659,7 +660,7 @@ namespace MessagePack.Formatters
             }
             
             var startOffset = offset;
-            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 6);
+            offset += global::MessagePack.MessagePackBinary.WriteFixedMapHeaderUnsafe(ref bytes, offset, 7);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[0]);
             offset += MessagePackBinary.WriteUInt32(ref bytes, offset, value.numberIntegrated);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[1]);
@@ -672,6 +673,8 @@ namespace MessagePack.Formatters
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.scalePower);
             offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[5]);
             offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.scaleMul);
+            offset += global::MessagePack.MessagePackBinary.WriteRaw(ref bytes, offset, this.____stringByteKeys[6]);
+            offset += MessagePackBinary.WriteSingle(ref bytes, offset, value.settingsVersion);
             return offset - startOffset;
         }
 
@@ -693,6 +696,7 @@ namespace MessagePack.Formatters
             var __animationSpeed__ = default(float);
             var __scalePower__ = default(float);
             var __scaleMul__ = default(float);
+            var __settingsVersion__ = default(uint);
 
             for (int i = 0; i < length; i++)
             {
@@ -725,6 +729,9 @@ namespace MessagePack.Formatters
                     case 5:
                         __scaleMul__ = MessagePackBinary.ReadSingle(bytes, offset, out readSize);
                         break;
+                    case 6:
+                        __settingsVersion__ = MessagePackBinary.ReadUInt32(bytes, offset, out readSize);
+                        break;
                     default:
                         readSize = global::MessagePack.MessagePackBinary.ReadNextBlock(bytes, offset);
                         break;
@@ -743,6 +750,7 @@ namespace MessagePack.Formatters
             ____result.animationSpeed = __animationSpeed__;
             ____result.scalePower = __scalePower__;
             ____result.scaleMul = __scaleMul__;
+            ____result.settingsVersion = __settingsVersion__;
             return ____result;
         }
     }

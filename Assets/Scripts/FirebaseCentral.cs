@@ -3,7 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using System.Threading.Tasks;
 
+#if !UNITY_VISIONOS 
 public class FirebaseCentral : MonoBehaviour
 {
 
@@ -164,3 +166,13 @@ public class FirebaseCentral : MonoBehaviour
     }
   
 }
+#else
+public class FirebaseCentral : MonoBehaviour
+{
+
+    
+    public void Start()
+    {
+    }
+  }
+#endif

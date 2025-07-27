@@ -100,7 +100,12 @@ public class eventDesc :IEquatable<eventDesc>
             return this.tryLoadingFromObject(node);
         return false;
     }
-    
+    public string getSortLabel()
+    {
+        
+            return string.Format("{0}_{1}", this.run, this.evn);
+       
+    }
     public bool tryLoadFromArray(JSONNode arr)
     {
         if (arr.Count < 3) return false;
@@ -820,6 +825,7 @@ public class SavedEventsSettings
 {
     public UInt32 numberIntegrated =20; //number of preintegrated files to keep
     public UInt32 numberKeptAsCsv = 60; //number of csv files to keep
+   
     public List<SavedEventData> eventData=new List<SavedEventData>();
     public bool CheckForCorrectness() //very basic check
     {
@@ -850,6 +856,7 @@ public class SavedEventsSettings
     public float animationSpeed=0.1f;
     public float scalePower=0.15f;
     public float scaleMul=2.0f;
+    public UInt32 settingsVersion = 4;
     public void deleteCache()
     {
         string pth = Application.persistentDataPath+"/";
@@ -998,6 +1005,7 @@ public class EventRestAPI : MonoBehaviour
             _Instance = this;
         simcache= new PrimCache<evId, ExtraSimData>();
         simcache.setMaxItems(10);
+       
         // string fullName = Application.persistentDataPath + "/" + "test.gz";
         //  string fsb = Application.persistentDataPath + "/" + "savedData.json";
         //   string lsb = Application.persistentDataPath + "/" + "sssavedData.json";
@@ -1288,6 +1296,7 @@ public class EventRestAPI : MonoBehaviour
     public static string lastEvents = "lasteventswithtracks";
     public static string lastEventsBefore = "lasteventsbeforeidwithtracks";
     public static string efile = "eventfile";
+    public static string topEfile = "topeventfile";
     public static string commentsUrl = "comment";
     public LoadingBar loading;
     string _curComment=null;
@@ -1595,7 +1604,7 @@ public class EventRestAPI : MonoBehaviour
                 sdat.hashname = null;
 
             }
-            string url = String.Format("{0}/{1}/{2}/{3}", mainURL, efile, ev.run, ev.evn);
+            string url = String.Format("{0}/{1}/{2}/{3}", mainURL, topEfile, ev.run, ev.evn);
             string csvdata = null;
             if (hdat != null && hdat.csvFile != null)
             {
@@ -2283,6 +2292,14 @@ public class EventRestAPI : MonoBehaviour
             UpdateLoading();
             yield break; //may crash after, but at that point, something is seriously off?
         }
+        Debug.LogFormat("Settings version is {0}", settings.settingsVersion);
+        if(settings.settingsVersion!=5)
+        {
+            Debug.LogFormat("Settings version invalid, deleting cache");
+            deleteEventsData();
+            settings.settingsVersion = 5;
+            saveSettings();
+        }
         loaderData.counter = settings.eventData.Count;
         loaderData.primaryCount = 0;
         loaderData.secondaryCount = 0;
@@ -2442,8 +2459,11 @@ public class EventRestAPI : MonoBehaviour
         loaderData.curStatus = "Update comments";
         loaderData.task = "Check events";
         UpdateLoading();
-        foreach (SavedEventData dat in settings.eventData)
+        var cnt=settings.eventData.Count;
+        for (int i = 0; i < cnt; i++)
+        //    foreach (SavedEventData dat in settings.eventData)
         {
+            SavedEventData dat = settings.eventData[i];
             evId evid = new evId(dat.description.run,dat.description.evn);
             if (dat.description.comment != null)
             {
@@ -2623,6 +2643,9 @@ public class EventRestAPI : MonoBehaviour
             SavedEventData edat;
             if (savedIndex.TryGetValue(expectedNextEvent, out edat))
             {
+                //Debug.Log(edat);
+                //Debug.Log(edat.csvName);
+                    
                 _curComment = edat.comment;
                 if(!edat.description.Equals(dat.description))
                 {

@@ -81,6 +81,7 @@ public class DropdownManager : MonoBehaviour
             curOptions.Add(edat.description);
         }
         lst.Sort((x, y) => -x.sortKey.CompareTo(y.sortKey));
+        curOptions.Sort((x, y) => -x.getSortLabel().CompareTo(y.getSortLabel()));
         //Debug.Log("Nyanya options");
         //Debug.Log("DropboxUpdate");
         if(managed==null)

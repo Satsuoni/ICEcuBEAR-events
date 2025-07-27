@@ -59,8 +59,10 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
     TouchReactionMode zmode;
     void PlaceUpdate()
     {
+       // Debug.LogFormat("Detecting touches");
         if (Input.touchCount > 0)
         {
+            Debug.LogFormat("Detecting touches {0}", Input.touchCount);
             Touch touch = Input.GetTouch(0);
             for (int i = 0; i < Input.touchCount; i++)
             {
@@ -168,11 +170,11 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
     {
 #if UNITY_ANDROID
         //added for Android back button reaction
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").GetStatic<AndroidJavaObject>("currentActivity");
-            activity.Call<bool>("moveTaskToBack", true);
-        }
+        //if (Input.GetKeyDown(KeyCode.Escape))
+       // {
+        //    AndroidJavaObject activity = new AndroidJavaClass("com.unity3d.player.UnityPlayer").GetStatic<AndroidJavaObject>("currentActivity");
+        //    activity.Call<bool>("moveTaskToBack", true);
+       // }
 #endif
 
         switch (zmode)
