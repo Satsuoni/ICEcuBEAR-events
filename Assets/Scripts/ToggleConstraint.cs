@@ -57,12 +57,12 @@ public class ToggleConstraint : MonoBehaviour,IUIConstraint
     // Start is called before the first frame update
     void Start()
     {
-        solver = FindObjectOfType<SimplexCalc>();
+        solver = FindFirstObjectByType<SimplexCalc>();
     }
     public void ToggleByIndex(int index)
     {
         if (solver==null)
-            solver = FindObjectOfType<SimplexCalc>();
+            solver = FindFirstObjectByType<SimplexCalc>();
         if (solver == null) return;
         if(index<0||index>=toggles.Length)
         {

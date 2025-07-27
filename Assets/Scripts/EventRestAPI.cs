@@ -546,13 +546,13 @@ public class SimulateMillipede : ThreadedJob
             }
         }
         Vector3 tdir = new Vector3(Mathf.Sin(track.zen_rad) * Mathf.Cos(track.azi_rad), Mathf.Sin(track.zen_rad) * Mathf.Sin(track.azi_rad), Mathf.Cos(track.zen_rad));
-        float vel = 0.299792458f;/// ni;
+        //float vel = 0.299792458f;/// ni;
         // float dt = atime - track.rec_t0;
         //Vector3 ice_offs = -tdir * vel * dt;
         //  Vector3 ice_pos = new Vector3(track.rec_x, track.rec_y, track.rec_z) + ice_offs;
         Vector3 initialPos = new Vector3(track.rec_x, track.rec_y, track.rec_z);
         Vector3 heading = -tdir / tdir.magnitude;
-        float duration=5000; float emrate;
+        float duration=5000;// float emrate;
         float itime = track.rec_t0;
         int cntnz = 0;
         double accum = 0;
@@ -1625,7 +1625,7 @@ public class EventRestAPI : MonoBehaviour
                     loaderData.task = "Load datafile";
                     UpdateLoading();
                     yield return webRequest.SendWebRequest();
-                    if (webRequest.isNetworkError || webRequest.isHttpError)
+                    if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
                     {
 
                         Debug.Log("Error getting  " + url + " :" + webRequest.error);
@@ -1732,7 +1732,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
             //webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError || webRequest.isHttpError)
+            if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
             {
                 gotEventNumber = false;
                 Debug.Log("Error getting  " + url + " :" + webRequest.error + " --> " + webRequest.responseCode.ToString() + webRequest.downloadHandler.text);
@@ -1781,7 +1781,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
            // webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError || webRequest.isHttpError)
+            if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
             {
                 gotLastEvents = false;
                 Debug.Log("Error getting  " + url + " :" + webRequest.error);
@@ -2078,7 +2078,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
            // webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError || webRequest.isHttpError)
+            if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
             {
                 gotLastBefore = false;
                 Debug.Log("Error getting  " + url + " :" + webRequest.error);
@@ -2408,7 +2408,7 @@ public class EventRestAPI : MonoBehaviour
             // Request and wait for the desired page.
            // webRequest.chunkedTransfer = false;
             yield return webRequest.SendWebRequest();
-            if (webRequest.isNetworkError || webRequest.isHttpError)
+            if (webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError)
             {
                 Debug.Log("Error getting  " + url + " :" + webRequest.error + " --> " + webRequest.responseCode.ToString() + webRequest.downloadHandler.text);
                 yield break;

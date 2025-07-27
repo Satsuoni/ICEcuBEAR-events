@@ -37,7 +37,7 @@ public class Landscaper : MonoBehaviour
     }
     public void OnEnabled()
     {
-        simplex = FindObjectOfType<SimplexCalc>();
+        simplex = FindFirstObjectByType<SimplexCalc>();
         landscaped = gameObject.GetComponentsInChildren<Landscaped>(true);
         mine = gameObject.GetComponent<RectTransform>();
         if(mine!=null)
@@ -90,7 +90,7 @@ public class Landscaper : MonoBehaviour
     {
         if(simplex==null)
         {
-            simplex = FindObjectOfType<SimplexCalc>();
+            simplex = FindFirstObjectByType<SimplexCalc>();
         }
       //  Debug.LogFormat("Simplex {0}",simplex);
         if (simplex != null)
@@ -102,7 +102,7 @@ public class Landscaper : MonoBehaviour
         // Debug.LogFormat("Changed {0} {1}",mine.offsetMin,mine.offsetMax);
         Vector2 wh = mine.offsetMax - mine.offsetMin;
         beSwitched(wh);
-        beenFlipped = false;
+        //beenFlipped = false;
        
     }
     // Update is called once per frame
@@ -139,7 +139,7 @@ public class Landscaper : MonoBehaviour
     // The absolute width of the display in pixels
     public static int WidthPixels { get; protected set; }
 #endif
-    bool beenFlipped = false;
+    //bool beenFlipped = false;
     void Update()
     {
       

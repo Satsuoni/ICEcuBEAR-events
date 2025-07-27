@@ -25,8 +25,8 @@ public class TrackMeshMaker : MonoBehaviour
         public double time;
     }
     burstEntry[] bursts = null;
-    int prunId = 134698;
-    int pevId = 40735501;
+    //int prunId = 134698;
+    //int pevId = 40735501;
     public void readCsv(extraData ndat)
     {
         string[] fLines = null;
