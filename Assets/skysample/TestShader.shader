@@ -3,6 +3,8 @@
 	{
 		_maxAngle("StarSize", Range(0.001, 0.03)) = 0.01 
 		_fluxGain("FluxSize", Range(0.01, 0.99)) = 0.4
+		_baseColor("BaseColor",  Color)=(0.9, 0.9, 1.0,1.0) 
+		_clipSky("ClipSky",Range(0.0, 1.0))=0.0
 	}
 	SubShader{
 		Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
@@ -42,9 +44,10 @@
 	
 		float _maxAngle;
 		float _fluxGain;
+		float4 _baseColor;
 		float4 xvec;
 		float4 yvec;
-	
+	    float _clipSky;
 
 	v2f vert(appdata i) {
 		v2f o; 
@@ -61,16 +64,17 @@
 		o.worldNormal = UnityObjectToWorldNormal(i.normal);
 		return o;
 	}
-	float3 colorFromDist(float3 coords, float3 vert, float2 clr)
+	float3 colorFromDist(float3 coords, float3 vert, float2 clr,out float almod)
 	{
 		//clr.x is flux and clr.y is potentially hue/redshift, nothing now...
 		float df = dot(coords, normalize(vert));
 		float angl = 2 * (1 - df);
 		float maxangl = _maxAngle *((1-_fluxGain) + _fluxGain *clr.x);
 		maxangl = maxangl * maxangl;
-		const float3 base = float3(0.9, 0.9, 1);
+		
 		float da = angl / maxangl;
-		return step(angl, maxangl)*base*(1 - da);
+		almod=step(angl, maxangl);
+		return step(angl, maxangl)*_baseColor.rgb*(1 - da);
 	}
 	float reddiness(float3 coords, float3 vert, float2 clr)
 	{
@@ -107,13 +111,14 @@
 		v3.y = 0;
 		v3.z = (i.uv2.y - deg * 0.5) * 4 - 1;
 		v3.y = (1 - deg * 2)*sqrt(1 - dot(v3.xz, v3.xz));
+		float a1,a2,a3;
 
-
-		float3 clr1 = colorFromDist(coords, v1, i.uv.zw);
-		float3 clr2 = colorFromDist(coords, v2, i.uv1.zw);
-		float3 clr3 = colorFromDist(coords, v3, i.uv2.zw);
+		float3 clr1 = colorFromDist(coords, v1, i.uv.zw,a1);
+		float3 clr2 = colorFromDist(coords, v2, i.uv1.zw,a2);
+		float3 clr3 = colorFromDist(coords, v3, i.uv2.zw,a3);
 		
 		float4 c;
+		float tam=max(a1,max(a2,a3));
 		c.rgb= max(clr1, max(clr2, clr3));
 
 		c.a = 1;
@@ -123,7 +128,7 @@
 	float ca =  clamp(dot(normalize(i.worldNormal), ptr), 0, 1.0);
 	ca = ca * ca;
 	//if (ca > 0.5) ca = 0;
-	c.a = ca;
+	c.a = ca*((1.0-_clipSky)+_clipSky*tam);
 	return c;
 	}
 		ENDCG
