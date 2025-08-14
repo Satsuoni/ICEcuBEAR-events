@@ -103,11 +103,27 @@ public class PlaceMultipleObjectsOnPlane : MonoBehaviour
     bool prev1 = false;
     public delegate void SlideAction(Vector2 shft);
     public static event SlideAction FingerSliding;
+    List<RaycastResult> rresults = new List<RaycastResult>();
+    private bool IsPointerOverUIObject()
+    {
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        eventData.position = Input.mousePosition;
+        rresults.Clear();
+        EventSystem.current.RaycastAll(eventData, rresults);
+        /*Debug.LogFormat("RaycastAll: {0}",rresults.Count);
+        foreach (RaycastResult re in rresults)
+        {
+            Debug.LogFormat("RaycastOne: {0}", re.gameObject.name);
+
+        }*/
+        return rresults.Count > 0;
+    }
     void ZoomUpdate()
     {
         if(Input.touchCount==1)
         {
-            if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId))
+           
+            if (EventSystem.current.IsPointerOverGameObject(Input.GetTouch(0).fingerId) || IsPointerOverUIObject())
             {
                 prev1 = false;
                 return;

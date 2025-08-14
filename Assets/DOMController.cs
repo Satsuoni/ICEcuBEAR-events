@@ -382,6 +382,7 @@ curEvent = new List<eventData>();
             if (towerControl != null)
             {
                 towerControl.onValueChanged.AddListener(delegate { towerChange(); });
+                towerChange();
             }
         }
         GameObject czCon = GameObject.Find("zillaToggle");
@@ -391,6 +392,7 @@ curEvent = new List<eventData>();
             if (czillaControl != null)
             {
                 czillaControl.onValueChanged.AddListener(delegate { czillaChange(); });
+                czillaChange();
             }
         }
         foreach (singleBallList lst in ballArray)
